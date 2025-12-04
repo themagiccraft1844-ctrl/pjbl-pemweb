@@ -115,12 +115,5 @@
         </div>
         @endforelse
     </div>
-    <script>
-        function openDetail(id, type) {
-            if(type==="tree") window.location.href=`/pohon/${id}`;
-            else if(type==="mading") window.location.href=`/mading/${id}`;
-            else if(type==="mailbox") window.location.href=`/mailbox/${id}`;
-        }
-    </script>
 @endsection
 
