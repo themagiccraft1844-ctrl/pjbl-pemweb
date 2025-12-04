@@ -209,7 +209,8 @@
                     
                     <div class="row g-3">
                         @forelse($mailbox->messages as $msg)
-                            @if($msg->visibility == 'public' || ($msg->visibility == 'private' && auth()->id() == $msg->user_id))
+                            {{-- LOGIKA AKSES: Public OR Penulis OR Pemilik Mailbox --}}
+                            @if($msg->visibility == 'public' || ($msg->visibility == 'private' && (auth()->id() == $msg->user_id || auth()->id() == $mailbox->users_id)))
                             <div class="col-md-6">
                                 <div class="bg-white p-3 rounded shadow-sm cursor-pointer mail-item {{ $msg->visibility == 'private' ? 'private' : '' }}"
                                      onclick="openReadModal('{{ addslashes($msg->name) }}', '{{ addslashes($msg->message) }}', '{{ $msg->created_at->diffForHumans() }}', '{{ $msg->visibility }}', '{{ $msg->id }}', '{{ $msg->user_id }}')">
@@ -287,6 +288,8 @@
         let composeModal, inboxModal, readModal;
         const currentUserId = {{ auth()->check() ? auth()->id() : 'null' }};
         const isAdmin = {{ auth()->check() && auth()->user()->role === 'admin' ? 'true' : 'false' }};
+        // ID Pemilik Mailbox (Server Side)
+        const mailboxOwnerId = {{ $mailbox->users_id }};
 
         document.addEventListener('DOMContentLoaded', () => {
             composeModal = new bootstrap.Modal(document.getElementById('composeModal'));
@@ -317,10 +320,15 @@
             else badge.classList.add('d-none');
 
             // Delete Button Logic
+            // Hapus muncul jika: Saya pemilik surat OR Saya pemilik mailbox OR Admin
             const deleteForm = document.getElementById('form-delete-mail');
             const deleteInput = document.getElementById('delete-mail-id');
             
-            if(String(ownerId) === String(currentUserId) || isAdmin) {
+            // Konversi ke string agar aman saat compare
+            const isMyMailbox = String(mailboxOwnerId) === String(currentUserId);
+            const isMyMessage = String(ownerId) === String(currentUserId);
+
+            if(isMyMessage || isMyMailbox || isAdmin) {
                 deleteForm.classList.remove('d-none');
                 deleteInput.value = id;
             } else {
@@ -332,10 +340,10 @@
 
         // Animasi Kirim Surat (Fake Animation sebelum Submit Form)
         function animateSend(e) {
-            // Kita biarkan form submit normal, tapi kita bisa tambah efek kalau mau
-            // Karena ini synchronous form submit, halaman akan reload, 
-            // jadi animasi CSS kompleks mungkin terpotong.
-            // Tapi kita bisa sembunyikan modal dulu biar terlihat responsif.
+            e.preventDefault();
+            const form = e.target;
+            
+            // Sembunyikan modal
             composeModal.hide();
             
             // Animasi surat terbang
@@ -343,13 +351,6 @@
             flyer.classList.remove('d-none');
             flyer.classList.add('anim-flying-letter');
             
-            // Biarkan form submit berjalan (default action tidak di-prevent di onsubmit HTML di atas kalau mau animasi full)
-            // TAPI, karena kita mau animasi terlihat dulu, kita preventDefault di sini,
-            // tunggu animasi, baru submit manual.
-            
-            e.preventDefault();
-            const form = e.target;
-
             setTimeout(() => {
                 form.submit();
             }, 1000); // Tunggu 1 detik animasi terbang

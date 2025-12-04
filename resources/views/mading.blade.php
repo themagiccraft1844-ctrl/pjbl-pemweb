@@ -166,15 +166,14 @@
                 <!-- LOOP PESAN DARI DATABASE (BLADE) -->
                 @foreach($mading->messages as $msg)
                     @php
-                        // Filter Privasi Visual di Blade (Opsional, controller sudah filter)
                         // Logika rotasi acak biar natural
                         $rot = rand(-5, 5); 
-                        
                         // Menentukan warna background
                         $bgClass = $msg->color ?? 'bg-yellow-200';
                     @endphp
 
-                    @if($msg->visibility == 'public' || ($msg->visibility == 'private' && auth()->id() == $msg->user_id))
+                    {{-- LOGIKA AKSES: Public OR Penulis OR Pemilik Mading --}}
+                    @if($msg->visibility == 'public' || ($msg->visibility == 'private' && (auth()->id() == $msg->user_id || auth()->id() == $mading->users_id)))
                     <div class="sticky-note animate-pop {{ $bgClass }}" 
                          style="left: {{ $msg->x }}%; top: {{ $msg->y }}%; transform: rotate({{ $rot }}deg);"
                          onclick="openViewModal(
@@ -329,9 +328,10 @@
         let isPlacementMode = false;
         let createModal, viewModal;
         
-        // Data User Login (Dari Blade)
+        // Data User Login & Pemilik Mading
         const currentUserId = {{ auth()->check() ? auth()->id() : 'null' }};
         const isAdmin = {{ auth()->check() && auth()->user()->role === 'admin' ? 'true' : 'false' }};
+        const madingOwnerId = {{ $mading->users_id }};
 
         document.addEventListener('DOMContentLoaded', () => {
             createModal = new bootstrap.Modal(document.getElementById('createModal'));
@@ -409,12 +409,14 @@
             if(visibility === 'private') badge.classList.remove('d-none');
             else badge.classList.add('d-none');
 
-            // Logika Tombol Hapus
+            // Logika Tombol Hapus: Pemilik Note OR Pemilik Mading OR Admin
             const deleteForm = document.getElementById('form-delete');
             const deleteInput = document.getElementById('delete-msg-id');
             
-            // Cek kepemilikan
-            if (String(ownerId) === String(currentUserId) || isAdmin) {
+            const isMyNote = String(ownerId) === String(currentUserId);
+            const isMyMading = String(madingOwnerId) === String(currentUserId);
+
+            if (isMyNote || isMyMading || isAdmin) {
                 deleteForm.classList.remove('d-none');
                 deleteInput.value = id;
             } else {
