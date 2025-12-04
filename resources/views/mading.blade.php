@@ -3,565 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wishnotes - Mading Sekolah</title>
+    <title>{{ $mading->judul }} - Wishnotes</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts: Handwriting style -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Patrick+Hand&display=swap" rel="stylesheet">
 
     <style>
-        /* CSS Pattern untuk Papan Gabus (Corkboard) */
-        .corkboard-pattern {
+        body {
+            background-color: #a18cd1;
+            min-height: 100vh;
+            overflow: hidden; /* Mencegah scroll body, scroll hanya di board jika perlu */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* --- CORKBOARD STYLES --- */
+        .corkboard-wrapper {
+            width: 100%;
+            height: 80vh; /* Tinggi area mading */
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wooden-frame {
+            width: 100%;
+            height: 100%;
             background-color: #d8c29d;
             background-image: radial-gradient(#c7ad85 2px, transparent 2px), radial-gradient(#c7ad85 2px, transparent 2px);
             background-size: 30px 30px;
             background-position: 0 0, 15px 15px;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.3);
+            border: 15px solid #5d4037;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden; /* Penting agar note tidak keluar frame */
+            cursor: default;
         }
 
-        /* Frame Kayu */
-        .wooden-frame {
-            border: 15px solid #8d6e63;
-            border-image: linear-gradient(to bottom right, #8d6e63, #5d4037) 1;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-        }
-
-        /* Sticky Note Styles */
+        /* --- STICKY NOTES --- */
         .sticky-note {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            padding: 15px;
             font-family: 'Indie Flower', cursive;
-            transition: transform 0.2s, box-shadow 0.2s, z-index 0s;
-            box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
-            /* Transform origin di tengah atas (lokasi paku) */
-            transform-origin: top center; 
-            will-change: transform;
-        }
-        .sticky-note:hover {
-            z-index: 50 !important;
-            box-shadow: 15px 15px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s, z-index 0s;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* Warna Default jika class tidak termuat */
+            background-color: #fff740; 
         }
 
-        /* Paku Payung (Pin) */
+        /* Warna-warni Note (Mapping dari Tailwind lama ke CSS biasa) */
+        .bg-yellow-200 { background-color: #fff59d !important; }
+        .bg-pink-200 { background-color: #f8bbd0 !important; }
+        .bg-green-200 { background-color: #c8e6c9 !important; }
+        .bg-blue-200 { background-color: #bbdefb !important; }
+
+        .sticky-note:hover {
+            z-index: 100 !important;
+            transform: scale(1.1) !important;
+            box-shadow: 10px 10px 25px rgba(0,0,0,0.3);
+        }
+
         .pin {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #ff5252, #b71c1c);
             position: absolute;
-            top: 5px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            z-index: 10;
+            z-index: 5;
         }
 
-        /* Lock Icon on Note */
-        .lock-badge {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            color: rgba(0,0,0,0.4);
+        .note-text {
+            font-size: 1.1rem;
+            line-height: 1.2;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .note-author {
             font-size: 0.8rem;
+            font-weight: bold;
+            color: #666;
         }
 
-        /* Modal Animation (Popup Form) */
-        @keyframes notePop {
-            0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
-            100% { transform: scale(1) rotate(-2deg); opacity: 1; }
-        }
-        .note-anim {
-            animation: notePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        /* Animasi "Slap" saat Menempel Sticky Note */
-        @keyframes slapIn {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, -80px) scale(1.5) rotate(var(--rot)); /* Mulai dari atas & besar */
-                box-shadow: 20px 20px 40px rgba(0,0,0,0.5);
-            }
-            60% {
-                opacity: 1;
-                transform: translate(-50%, 0) scale(0.9) rotate(var(--rot)); /* Membentur papan (gepeng dikit) */
-                box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            }
-            80% {
-                transform: translate(-50%, 0) scale(1.05) rotate(var(--rot)); /* Membal sedikit */
-            }
-            100% {
-                transform: translate(-50%, 0) scale(1) rotate(var(--rot)); /* Posisi normal */
-            }
+        /* --- UTILS --- */
+        .cursor-pin {
+            cursor: crosshair !important; /* Cursor saat mode tempel */
         }
         
-        .animate-slap {
-            animation: slapIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        .header-title {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            transform: rotate(-1deg);
+            border: 1px solid #ccc;
         }
 
-        /* Custom Cursor for Placement */
-        .cursor-pin {
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23dc2626" stroke="white" stroke-width="2"><path d="M12 2L12 15M12 15L8 22M12 15L16 22"/></svg>') 16 32, crosshair;
+        /* Animasi muncul */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
-
-        /* Toggle Button Styles */
-        .toggle-radio:checked + div {
-            background-color: #4b5563; /* gray-600 */
-            color: white;
-            border-color: #374151;
+        .animate-pop {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
 </head>
-<body class="bg-[#a18cd1] h-screen w-full overflow-hidden flex flex-col items-center justify-center font-sans">
+<body>
 
-    <!-- Back Button -->
-    <a href="/dashboard" class="absolute top-4 left-4 z-40 bg-white hover:bg-gray-100 text-purple-600 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-        <i class="fas fa-arrow-left"></i>
+    <!-- Tombol Kembali -->
+    <a href="/dashboard" class="btn btn-light rounded-circle shadow position-absolute top-0 start-0 m-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; z-index: 1000;">
+        <i class="fas fa-arrow-left text-primary"></i>
     </a>
 
-    <!-- Header -->
-    <div class="absolute top-4 z-10 text-center pointer-events-none" id="header-area">
-        <div class="bg-white/90 backdrop-blur px-6 py-2 rounded-lg shadow-md transform -rotate-1 border border-gray-300">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 font-['Patrick_Hand'] tracking-wider">
-                {{ $mading->judul }}
-            </h1>
-            <p class="text-gray-600 text-sm">{{ $mading->deskripsi_singkat }}</p>
+    <!-- Header Judul -->
+    <div class="position-absolute top-0 w-100 d-flex justify-content-center pt-3" style="z-index: 500; pointer-events: none;">
+        <div class="header-title px-4 py-2 rounded shadow text-center">
+            <h1 class="h3 fw-bold mb-0 font-monospace text-dark">{{ $mading->judul }}</h1>
+            <small class="text-muted">{{ $mading->deskripsi_singkat }}</small>
         </div>
     </div>
 
-    <!-- Alert Banner (Placement Mode) -->
-    <div id="placement-banner" class="absolute top-24 z-50 hidden animate-bounce">
-        <div class="bg-yellow-400 text-black px-4 py-2 rounded shadow-lg border-2 border-black font-bold flex items-center gap-2 transform rotate-1">
-            <i class="fas fa-thumbtack"></i>
-            <span>Klik bebas di mana saja!</span>
-            <button onclick="cancelPlacement()" class="ml-2 bg-red-600 text-white w-6 h-6 rounded-full text-xs hover:bg-red-700">
+    <!-- Alert Mode Menempel (Hidden Default) -->
+    <div id="placement-banner" class="position-absolute w-100 d-none justify-content-center" style="top: 100px; z-index: 1050;">
+        <div class="alert alert-warning border-2 border-dark shadow-lg d-flex align-items-center gap-2 py-2">
+            <i class="fas fa-thumbtack fa-bounce"></i>
+            <strong>Klik area kosong di mading untuk menempel!</strong>
+            <button onclick="cancelPlacement()" class="btn btn-sm btn-danger ms-2 rounded-circle" style="width: 25px; height: 25px; padding: 0;">
                 <i class="fas fa-times"></i>
             </button>
         </div>
     </div>
 
-    <!-- Main Corkboard Area -->
-    <div class="relative w-full h-full max-w-5xl max-h-[80vh] p-4 flex items-center justify-center">
-        
-        <!-- The Board -->
-        <div id="mading-board" class="w-full h-full wooden-frame corkboard-pattern relative overflow-hidden rounded shadow-2xl transition-all" onclick="handleBoardClick(event)">
+    <!-- Main Content: Mading Board -->
+    <div class="d-flex align-items-center justify-content-center min-vh-100">
+        <div class="corkboard-wrapper px-3">
             
-            <!-- Notes Container -->
-            <div id="notes-container" class="w-full h-full relative">
-                <!-- Notes will be injected here via JS -->
-            </div>
+            <!-- THE BOARD -->
+            <div id="mading-board" class="wooden-frame" onclick="handleBoardClick(event)">
+                
+                <!-- LOOP PESAN DARI DATABASE (BLADE) -->
+                @foreach($mading->messages as $msg)
+                    @php
+                        // Filter Privasi Visual di Blade (Opsional, controller sudah filter)
+                        // Logika rotasi acak biar natural
+                        $rot = rand(-5, 5); 
+                        
+                        // Menentukan warna background
+                        $bgClass = $msg->color ?? 'bg-yellow-200';
+                    @endphp
 
+                    @if($msg->visibility == 'public' || ($msg->visibility == 'private' && auth()->id() == $msg->user_id))
+                    <div class="sticky-note animate-pop {{ $bgClass }}" 
+                         style="left: {{ $msg->x }}%; top: {{ $msg->y }}%; transform: rotate({{ $rot }}deg);"
+                         onclick="openViewModal(
+                            '{{ $msg->id }}', 
+                            '{{ addslashes($msg->name) }}', 
+                            '{{ addslashes($msg->message) }}', 
+                            '{{ $bgClass }}',
+                            '{{ $msg->user_id }}',
+                            '{{ $msg->visibility }}'
+                         )">
+                        
+                        <!-- Paku -->
+                        <div class="pin"></div>
+                        
+                        <!-- Gembok jika private -->
+                        @if($msg->visibility == 'private')
+                            <div class="position-absolute top-0 end-0 m-1 text-secondary small">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                        @endif
+
+                        <!-- Konten -->
+                        <p class="note-text">{{ $msg->message }}</p>
+                        <div class="note-author">- {{ $msg->name }}</div>
+                    </div>
+                    @endif
+                @endforeach
+
+            </div>
         </div>
     </div>
 
-    <!-- Dashboard Controls -->
-    <div id="controls" class="absolute bottom-6 flex gap-4 z-40 transition-transform duration-300">
-        
-        <!-- Stats -->
-        <div class="bg-white/90 backdrop-blur px-4 py-2 rounded shadow border border-gray-300 flex items-center gap-3">
-            <div class="text-center">
-                <span class="block text-xs text-gray-500 font-bold uppercase">Notes</span>
-                <span class="font-bold text-xl text-gray-800" id="total-notes">{{ $mading->messages->count() }}</span>
-            </div>
+    <!-- Controls (Bawah) -->
+    <div id="controls" class="position-absolute bottom-0 w-100 pb-4 d-flex justify-content-center gap-3" style="z-index: 600;">
+        <!-- Statistik -->
+        <div class="bg-white px-3 py-2 rounded shadow d-flex align-items-center gap-2">
+            <i class="fas fa-sticky-note text-warning"></i>
+            <span class="fw-bold">{{ $mading->messages->count() }}</span> Pesan
         </div>
 
-        <!-- Add Button -->
-        <button onclick="startPlacementMode()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded shadow-lg transform hover:-translate-y-1 transition-all flex items-center gap-2 font-bold border-b-4 border-blue-800 active:border-b-0 active:translate-y-1">
-            <i class="fas fa-plus"></i> Tempel Catatan
+        <!-- Tombol Tambah -->
+        <button onclick="startPlacementMode()" class="btn btn-primary fw-bold shadow-lg rounded-pill px-4">
+            <i class="fas fa-plus me-1"></i> Tempel Baru
         </button>
+
+        <!-- Tombol Like (Madingnya) -->
+        <form action="{{ route('pohon.like') }}" method="POST">
+            @csrf
+            <input type="hidden" name="tree_id" value="{{ $mading->id }}">
+            <button type="submit" class="btn btn-light text-danger fw-bold shadow rounded-pill px-3">
+                <i class="{{ $isLiked ? 'fas' : 'far' }} fa-heart"></i> {{ $mading->like_count }}
+            </button>
+        </form>
     </div>
 
-    <!-- Modal Form (Input Note) -->
-    <div id="form-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div onclick="closeFormModal()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        
-        <!-- Form Card -->
-        <div class="relative bg-white w-full max-w-sm p-1 shadow-2xl transform rotate-1 note-anim">
-            <div class="bg-yellow-100 p-6 border border-gray-200">
-                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-8 bg-gray-300/50 backdrop-blur transform -rotate-1 skew-x-12"></div> <!-- Tape Effect -->
-
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-['Patrick_Hand'] text-2xl font-bold text-gray-700">Tulis Pesan...</h3>
-                    <button onclick="closeFormModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+    <!-- MODAL 1: INPUT NOTE (Bootstrap) -->
+    <div class="modal fade" id="createModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg" style="background-color: #fff9c4; transform: rotate(-2deg);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-monospace fw-bold">Tulis Pesan...</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+                <div class="modal-body">
+                    <form action="{{ route('pohon.store') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="tree_id" value="{{ $mading->id }}">
+                        <!-- Input Hidden Koordinat (Diisi via JS) -->
+                        <input type="hidden" name="x" id="inputX">
+                        <input type="hidden" name="y" id="inputY">
 
-                <form id="noteForm" onsubmit="event.preventDefault(); submitNote();">
-                    
-                    <!-- Visibility Toggle -->
-                    <div class="flex mb-4 bg-white/50 rounded-lg p-1 border border-gray-300">
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="visibility" value="public" class="hidden toggle-radio" checked>
-                            <div class="text-center py-1 rounded text-sm font-bold text-gray-500 transition-colors">
-                                <i class="fas fa-globe mr-1"></i> Publik
-                            </div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="visibility" value="private" class="hidden toggle-radio">
-                            <div class="text-center py-1 rounded text-sm font-bold text-gray-500 transition-colors">
-                                <i class="fas fa-lock mr-1"></i> Privat
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="mb-3">
-                        <input type="text" id="inputName" class="w-full bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none py-1 font-['Indie_Flower'] text-xl placeholder-gray-400" placeholder="Namamu(bisa Anonim)" required>
-                    </div>
-                    <div class="mb-4">
-                        <textarea id="inputMessage" rows="4" class="w-full bg-white/50 border border-gray-200 rounded p-2 font-['Indie_Flower'] text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Tulis sesuatu yang seru..." required></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Pilih Warna Kertas</label>
-                        <div class="flex gap-3 justify-center">
-                            <label class="cursor-pointer transform hover:scale-110 transition-transform">
-                                <input type="radio" name="noteColor" value="bg-yellow-200" class="hidden peer" checked>
-                                <div class="w-8 h-8 bg-yellow-200 border-2 border-transparent peer-checked:border-gray-600 shadow-sm"></div>
-                            </label>
-                            <label class="cursor-pointer transform hover:scale-110 transition-transform">
-                                <input type="radio" name="noteColor" value="bg-pink-200" class="hidden peer">
-                                <div class="w-8 h-8 bg-pink-200 border-2 border-transparent peer-checked:border-gray-600 shadow-sm"></div>
-                            </label>
-                            <label class="cursor-pointer transform hover:scale-110 transition-transform">
-                                <input type="radio" name="noteColor" value="bg-green-200" class="hidden peer">
-                                <div class="w-8 h-8 bg-green-200 border-2 border-transparent peer-checked:border-gray-600 shadow-sm"></div>
-                            </label>
-                            <label class="cursor-pointer transform hover:scale-110 transition-transform">
-                                <input type="radio" name="noteColor" value="bg-blue-200" class="hidden peer">
-                                <div class="w-8 h-8 bg-blue-200 border-2 border-transparent peer-checked:border-gray-600 shadow-sm"></div>
-                            </label>
+                        <!-- Pilihan Privasi -->
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="visibility" id="vis_pub" value="public" checked>
+                            <label class="btn btn-outline-dark btn-sm" for="vis_pub">Publik</label>
+                            <input type="radio" class="btn-check" name="visibility" id="vis_priv" value="private">
+                            <label class="btn btn-outline-dark btn-sm" for="vis_priv">Privat</label>
                         </div>
-                    </div>
 
-                    <button type="submit" class="w-full bg-gray-800 text-white font-['Patrick_Hand'] text-xl py-2 rounded hover:bg-gray-700 transition-colors shadow-md">
-                        Tempel <i class="fas fa-check ml-1"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
+                        <div class="mb-2">
+                            <input type="text" name="name" class="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent" placeholder="Nama Pengirim (Opsional)">
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="message" class="form-control border-0 bg-light" rows="3" placeholder="Tulis sesuatu..." required style="font-family: 'Indie Flower', cursive; font-size: 1.2rem;"></textarea>
+                        </div>
 
-    <!-- Modal View Note (Detail) -->
-    <div id="view-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div onclick="closeViewModal()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        
-        <!-- View Note Card -->
-        <div id="view-card-content" class="relative w-full max-w-md shadow-2xl transform transition-transform duration-300 scale-100 note-anim p-1">
-            <div class="bg-white p-8 min-h-[300px] flex flex-col relative">
-                <!-- Visual Pin -->
-                <div class="pin top-2 left-1/2 -translate-x-1/2 w-4 h-4 shadow-md bg-red-600"></div>
+                        <!-- Pilihan Warna -->
+                        <label class="form-label small fw-bold text-muted mb-1">Warna Kertas:</label>
+                        <div class="d-flex justify-content-between mb-3 px-2">
+                            <input type="radio" class="btn-check" name="color" id="clr_yellow" value="bg-yellow-200" checked>
+                            <label class="btn rounded-circle shadow-sm" for="clr_yellow" style="width: 30px; height: 30px; background-color: #fff59d; border: 1px solid #ddd;"></label>
+                            
+                            <input type="radio" class="btn-check" name="color" id="clr_pink" value="bg-pink-200">
+                            <label class="btn rounded-circle shadow-sm" for="clr_pink" style="width: 30px; height: 30px; background-color: #f8bbd0; border: 1px solid #ddd;"></label>
+                            
+                            <input type="radio" class="btn-check" name="color" id="clr_green" value="bg-green-200">
+                            <label class="btn rounded-circle shadow-sm" for="clr_green" style="width: 30px; height: 30px; background-color: #c8e6c9; border: 1px solid #ddd;"></label>
+                            
+                            <input type="radio" class="btn-check" name="color" id="clr_blue" value="bg-blue-200">
+                            <label class="btn rounded-circle shadow-sm" for="clr_blue" style="width: 30px; height: 30px; background-color: #bbdefb; border: 1px solid #ddd;"></label>
+                        </div>
 
-                <button onclick="closeViewModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-
-                <div class="mt-4 flex-grow flex flex-col justify-center items-center text-center">
-                    <!-- Status Header -->
-                    <div id="view-private-badge" class="hidden mb-2 px-2 py-1 bg-gray-800/10 rounded-full text-xs font-bold text-gray-600 flex items-center gap-1">
-                        <i class="fas fa-lock"></i> Catatan Privat
-                    </div>
-
-                    <p class="font-['Indie_Flower'] text-3xl text-gray-800 leading-relaxed mb-6" id="view-message">
-                        "Loading message..."
-                    </p>
-                    <div class="w-16 h-1 bg-gray-300 rounded mb-4"></div>
-                    <p class="font-['Patrick_Hand'] text-xl text-gray-600" id="view-author">
-                        - Author
-                    </p>
-                </div>
-
-                <!-- Footer Buttons -->
-                <div class="mt-6 flex justify-between items-center border-t border-gray-400/20 pt-4">
-
-                     <button onclick="closeViewModal()" class="text-sm text-gray-500 font-bold hover:text-gray-800">Tutup</button>
-                     <button onclick="deleteCurrentNote()" class="text-sm text-red-500 font-bold hover:text-gray-800">Delete</button>
-                     <button id="btn-delete-note" onclick="deleteCurrentNote()" class="hidden text-sm text-red-500 font-bold hover:text-red-700 bg-red-100 px-3 py-1 rounded hover:bg-red-200 transition-colors">
-                        <i class="fas fa-trash-alt mr-1"></i> Copot Catatan
-                     </button>
+                        <button type="submit" class="btn btn-dark w-100 font-monospace">
+                            <i class="fas fa-thumbtack me-1"></i> Tempel
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- MODAL 2: VIEW NOTE (Bootstrap) -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" id="view-modal-content">
+                <div class="modal-header border-0">
+                    <div class="pin position-absolute start-50 top-0 translate-middle mt-2" style="background: red; width: 15px; height: 15px;"></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center pt-0">
+                    <span id="view-badge" class="badge bg-secondary mb-2 d-none"><i class="fas fa-lock"></i> Privat</span>
+                    
+                    <h3 id="view-message-text" class="mb-4 text-dark" style="font-family: 'Indie Flower', cursive; line-height: 1.5;">...</h3>
+                    
+                    <div class="border-top pt-2">
+                        <small class="text-muted text-uppercase fw-bold">Tertanda,</small>
+                        <h5 id="view-author-text" class="fw-bold" style="font-family: 'Patrick Hand', cursive;">...</h5>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    
+                    <!-- Tombol Hapus (Hanya muncul jika owner) -->
+                    <form action="{{ route('pohon.delete') }}" method="POST" id="form-delete" class="d-none">
+                        @csrf
+                        <input type="hidden" name="tree_id" id="delete-msg-id">
+                        <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3" onclick="return confirm('Copot catatan ini?')">
+                            <i class="fas fa-trash-alt me-1"></i> Copot
+                        </button>
+                    </form>
+
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // --- USER IDENTITY ---
-        function getUserId() {
-            let id = localStorage.getItem('mading_uid');
-            if (!id) {
-                id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('mading_uid', id);
-            }
-            return id;
-        }
-        
-        const currentUserId = getUserId();
-        const ADMIN_ID = 'admin'; 
-        // Simulasi Admin via URL parameter ?admin=true
-        const isAdminSession = new URLSearchParams(window.location.search).get('admin') === 'true';
-
-        // --- DATA & STATE ---
-        const initialNotes = [
-            { id: 1, name: "Ketua Osis", message: "Jangan lupa rapat besok jam 3 sore ya guys!", color: "bg-yellow-200", x: 20, y: 30, rotation: -2, visibility: 'public', ownerId: 'osis' },
-            { id: 2, name: "Anonim", message: "Semangat ujiannya kakak-kakak kelas 12!", color: "bg-pink-200", x: 60, y: 20, rotation: 3, visibility: 'public', ownerId: 'student1' },
-            { id: 3, name: "Eskul Musik", message: "Dicari: Vokalis baru. Hubungi kami di ruang musik.", color: "bg-green-200", x: 40, y: 60, rotation: -1, visibility: 'public', ownerId: 'musik' }
-        ];
-
-        let notes = @json($mading->messages);
-        console.log(notes)
+        // State
         let isPlacementMode = false;
-        let tempCoords = null;
-        let currentViewNoteId = null; // Menyimpan ID note yang sedang dibuka
+        let createModal, viewModal;
+        
+        // Data User Login (Dari Blade)
+        const currentUserId = {{ auth()->check() ? auth()->id() : 'null' }};
+        const isAdmin = {{ auth()->check() && auth()->user()->role === 'admin' ? 'true' : 'false' }};
 
-        // --- RENDER LOGIC ---
-        function renderAllNotes() {
-            const container = document.getElementById('notes-container');
-            container.innerHTML = ''; // Reset container
-            notes.forEach(renderNote);
-            updateStats();
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            createModal = new bootstrap.Modal(document.getElementById('createModal'));
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+        });
 
-        function renderNote(data) {
-            // --- PRIVACY FILTER ---
-            // Jika pesan privat DAN bukan milik user saat ini, jangan ditampilkan
-            if (data.visibility === 'private' && data.ownerId !== currentUserId) {
-                return;
-            }
-
-            const container = document.getElementById('notes-container');
-            const noteEl = document.createElement('div');
-            
-            // Randomize rotation if new or use saved
-            const rotation = data.rotation !== undefined ? data.rotation : (Math.random() * 10 - 5); 
-            
-            // Set CSS variable untuk rotasi agar bisa dibaca oleh keyframe animation
-            noteEl.style.setProperty('--rot', rotation + 'deg');
-
-            // Note Styling
-            // Tambahkan class 'animate-slap' agar animasi berjalan saat elemen dibuat
-            noteEl.className = `sticky-note animate-slap absolute w-32 md:w-40 aspect-square p-3 shadow-md flex flex-col justify-center items-center text-center cursor-pointer ${data.color}`;
-            
-            // Positioning Logic:
-            noteEl.style.left = data.x + '%';
-            noteEl.style.top = data.y + '%';
-            noteEl.style.transform = `translate(-50%, 0) rotate(${rotation}deg)`;
-            
-            // Icon Gembok (jika privat)
-            let lockHtml = '';
-            if (data.visibility === 'private') {
-                lockHtml = '<div class="lock-badge"><i class="fas fa-lock"></i></div>';
-            }
-
-            // Inner HTML (Pin + Text Preview + Lock)
-            noteEl.innerHTML = `
-                <div class="pin"></div>
-                ${lockHtml}
-                <div class="w-full h-full overflow-hidden pointer-events-none select-none flex flex-col justify-center">
-                    <p class="text-gray-800 text-sm md:text-base leading-tight line-clamp-4 overflow-hidden" style="font-family: 'Indie Flower', cursive;">
-                        ${data.message}
-                    </p>
-                    <p class="mt-2 text-xs font-bold text-gray-500 truncate">- ${data.name}</p>
-                </div>
-            `;
-
-            // Hapus class animasi setelah selesai agar transisi hover berfungsi normal
-            noteEl.addEventListener('animationend', () => {
-                noteEl.classList.remove('animate-slap');
-            });
-
-            // Interaction Effects
-            noteEl.onmouseenter = () => {
-                noteEl.style.transform = `translate(-50%, 0) rotate(${rotation}deg) scale(1.15)`;
-            };
-            noteEl.onmouseleave = () => {
-                noteEl.style.transform = `translate(-50%, 0) rotate(${rotation}deg) scale(1)`;
-            };
-
-            // Pass full data object to modal
-            noteEl.onclick = (e) => {
-                e.stopPropagation();
-                openViewModal(data);
-            };
-
-            container.appendChild(noteEl);
-        }
-
-        function updateStats() {
-            // Hitung hanya yang visible untuk user ini
-            const visibleCount = notes.filter(n => n.visibility === 'public' || n.ownerId === currentUserId).length;
-            // document.getElementById('total-notes').innerText = visibleCount;
-        }
-
-        // --- PLACEMENT LOGIC ---
+        // --- MODE MENEMPEL ---
         function startPlacementMode() {
             isPlacementMode = true;
             document.getElementById('mading-board').classList.add('cursor-pin');
-            document.getElementById('placement-banner').classList.remove('hidden');
-            document.getElementById('placement-banner').classList.add('flex');
-            document.getElementById('controls').classList.add('translate-y-20', 'opacity-0');
-            document.getElementById('header-area').classList.add('opacity-50');
-        }
-
-        function stopPlacementMode() {
-            isPlacementMode = false;
-            document.getElementById('mading-board').classList.remove('cursor-pin');
-            document.getElementById('placement-banner').classList.add('hidden');
-            document.getElementById('placement-banner').classList.remove('flex');
-            document.getElementById('controls').classList.remove('translate-y-20', 'opacity-0');
-            document.getElementById('header-area').classList.remove('opacity-50');
+            document.getElementById('placement-banner').classList.remove('d-none');
+            document.getElementById('placement-banner').classList.add('d-flex');
+            
+            // Sembunyikan kontrol bawah agar tidak menghalangi
+            document.getElementById('controls').style.opacity = '0.2';
         }
 
         function cancelPlacement() {
-            stopPlacementMode();
-            tempCoords = null; 
+            isPlacementMode = false;
+            document.getElementById('mading-board').classList.remove('cursor-pin');
+            document.getElementById('placement-banner').classList.add('d-none');
+            document.getElementById('placement-banner').classList.remove('d-flex');
+            document.getElementById('controls').style.opacity = '1';
         }
 
-        function handleBoardClick(e) {
+        // --- KLIK PADA PAPAN ---
+        function handleBoardClick(event) {
+            // Hentikan jika event berasal dari sticky note (bubbling)
+            if (event.target.closest('.sticky-note')) return;
+
             if (!isPlacementMode) return;
 
-            const board = document.getElementById('mading-board');
+            // Hitung Koordinat %
+            const board = event.currentTarget;
             const rect = board.getBoundingClientRect();
             
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            // Posisi relatif mouse terhadap papan
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
 
-            let xPercent = (x / rect.width) * 100;
-            let yPercent = (y / rect.height) * 100;
+            // Konversi ke Persen
+            const xPercent = (x / rect.width) * 100;
+            const yPercent = (y / rect.height) * 100;
 
-            tempCoords = { x: xPercent, y: yPercent };
+            // Masukkan ke Input Hidden Form
+            document.getElementById('inputX').value = xPercent.toFixed(2);
+            document.getElementById('inputY').value = yPercent.toFixed(2);
 
-            stopPlacementMode(); 
-            openFormModal();
+            // Buka Modal & Reset UI
+            cancelPlacement();
+            createModal.show();
         }
 
-        // --- FORM LOGIC ---
-        function openFormModal() {
-            document.getElementById('form-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('inputName').focus(), 100);
-        }
+        // --- KLIK PADA NOTE (LIHAT DETAIL) ---
+        function openViewModal(id, name, message, colorClass, ownerId, visibility) {
+            if (isPlacementMode) return; // Jangan buka kalau lagi mode tempel
 
-        function closeFormModal() {
-            document.getElementById('form-modal').classList.add('hidden');
-            document.getElementById('noteForm').reset();
-            tempCoords = null; 
-        }
+            // Isi konten modal
+            document.getElementById('view-message-text').innerText = message;
+            document.getElementById('view-author-text').innerText = name;
 
-        function submitNote() {
-            const name = document.getElementById('inputName').value;
-            const message = document.getElementById('inputMessage').value;
-            const color = document.querySelector('input[name="noteColor"]:checked').value;
-            const visibility = document.querySelector('input[name="visibility"]:checked').value;
+            // Set Warna Modal agar sama dengan note
+            const modalContent = document.getElementById('view-modal-content');
+            // Reset class warna dulu
+            modalContent.className = 'modal-content border-0 shadow';
+            // Mapping warna manual karena class tailwind tidak jalan di bootstrap background
+            if(colorClass.includes('yellow')) modalContent.style.backgroundColor = '#fff9c4'; // lighten-4
+            else if(colorClass.includes('pink')) modalContent.style.backgroundColor = '#f8bbd0';
+            else if(colorClass.includes('green')) modalContent.style.backgroundColor = '#c8e6c9';
+            else if(colorClass.includes('blue')) modalContent.style.backgroundColor = '#bbdefb';
+            else modalContent.style.backgroundColor = '#fff';
 
-            if (!message) return;
+            // Badge Privat
+            const badge = document.getElementById('view-badge');
+            if(visibility === 'private') badge.classList.remove('d-none');
+            else badge.classList.add('d-none');
 
-            const coords = tempCoords || { x: 50, y: 50 };
-
- const newMessage = {
-                id: Date.now(), // Unique ID based on timestamp
-                tree_id: {{ $id }}, 
-                user_id: {{ auth()->user()->id }},
-                name: name || "Anonim",
-                message: message,
-                color: color,
-                x: coords.x,
-                y: coords.y,
-                visibility: visibility,
-                ownerId: currentUserId // Simpan ID pemilik saat ini
-            };
-
-            axios.post('/api/pohon/store', newMessage).then((response)=>{
-                console.log(response)
-            })
-
-            notes.push(newMessage);
-            renderAllNotes(); // Render ulang semua untuk memastikan urutan
+            // Logika Tombol Hapus
+            const deleteForm = document.getElementById('form-delete');
+            const deleteInput = document.getElementById('delete-msg-id');
             
-            document.getElementById('form-modal').classList.add('hidden');
-            document.getElementById('noteForm').reset();
-            // Reset visibility ke public secara default
-            document.querySelector('input[name="visibility"][value="public"]').checked = true;
-            tempCoords = null;
-            window.open(window.location.href, '_self')
-
-        }
-
-        // --- VIEW & DELETE LOGIC ---
-        function openViewModal(data) {
-            if (isPlacementMode) return;
-            
-            currentViewNoteId = data.id; // Simpan ID untuk fungsi hapus
-            
-            document.getElementById('view-author').innerText = "- " + data.name;
-            document.getElementById('view-message').innerText = `"${data.message}"`;
-            
-            // Atur warna kartu di modal
-            const cardContent = document.getElementById('view-card-content').querySelector('div');
-            // Hapus class warna lama
-            cardContent.classList.remove('bg-white', 'bg-yellow-100', 'bg-pink-100', 'bg-green-100', 'bg-blue-100');
-            // Tambah class warna baru (versi lebih terang '100')
-            const baseColor = data.color.replace('200', '100');
-            cardContent.classList.add(baseColor);
-
-            // Tampilkan badge Privat jika perlu
-            const privateBadge = document.getElementById('view-private-badge');
-            if (data.visibility === 'private') {
-                privateBadge.classList.remove('hidden');
+            // Cek kepemilikan
+            if (String(ownerId) === String(currentUserId) || isAdmin) {
+                deleteForm.classList.remove('d-none');
+                deleteInput.value = id;
             } else {
-                privateBadge.classList.add('hidden');
+                deleteForm.classList.add('d-none');
             }
 
-            // Cek Izin Hapus (Owner atau Admin)
-            const deleteBtn = document.getElementById('btn-delete-note');
-            if (data.ownerId === currentUserId || isAdminSession) {
-                deleteBtn.classList.remove('hidden');
-            } else {
-                deleteBtn.classList.add('hidden');
-            }
-
-            document.getElementById('view-modal').classList.remove('hidden');
+            viewModal.show();
         }
-
-        function closeViewModal() {
-            document.getElementById('view-modal').classList.add('hidden');
-            currentViewNoteId = null;
-        }
-
-        function deleteCurrentNote() {
-            if (!currentViewNoteId) return;
-
-            if (confirm("Yakin ingin mencopot catatan ini dari mading?")) {
-                // Hapus dari array
-                notes = notes.filter((n) => {
-                    n.id !== currentViewNoteId
-                
-            axios.post('/api/pohon/delete', {tree_id: currentViewNoteId}).then((response)=>{
-                console.log(response)
-                window.open(window.location.href, '_self')
-            })
-                });
-                // Render ulang papan
-
-
-                renderAllNotes();
-                closeViewModal();
-            }
-        }
-
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            renderAllNotes();
-        });
-
     </script>
 </body>
 </html>

@@ -2,46 +2,49 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WishNote;
-use Illuminate\Support\Facades\DB; // Diperlukan jika menghitung sesi aktif
+use App\Models\Message;
 
 class AdminDashboardController extends Controller
 {
     public function index()
     {
-        // 1. STATISTIK UTAMA
-        // Hitung total semua catatan
-        $totalCatatan = WishNote::count();
+        // 1. Statistik User
+        $totalUsers = User::count();
+        // User aktif 30 hari terakhir
+        $activeUsers = User::where('created_at', '>=', now()->subDays(30))->count();
+        
+        // 2. Statistik WishNote (Wadah)
+        $totalCatatan = WishNote::count(); 
+        
+        // PERBAIKAN: Menambahkan variabel $catatanPrivate
+        // Menghitung jumlah WishNote yang status privasinya 'private'
+        $catatanPrivate = WishNote::where('privasi', 'private')->count();
+        
+        // Opsional: Mungkin Anda juga butuh catatanPublic? Saya tambahkan sekalian untuk jaga-jaga
+        $catatanPublic = WishNote::where('privasi', 'public')->count();
 
-        // Hitung pengguna aktif (Opsional: bisa pakai User::count() untuk total user terdaftar)
-        // Jika ingin menghitung user yang sedang login (berdasarkan tabel sessions):
-        $activeUsers = DB::table('sessions')
-                        ->whereNotNull('user_id')
-                        ->distinct('user_id')
-                        ->count();
-        // Atau jika hanya ingin total user terdaftar:
-        // $activeUsers = User::count();
+        // 3. Statistik Pesan (Bola/Stiker)
+        $totalMessages = Message::count();
 
-        // Hitung catatan dengan privasi 'Private'
-        $catatanPrivate = WishNote::where('privasi', 'Private')->count();
-
-
-        // 2. AKTIVITAS TERBARU (Recent Activity)
-        // Mengambil 5 WishNote terbaru beserta data user pembuatnya dan jumlah pesan
-        $recentActivities = WishNote::with('user')
-            ->withCount('messages') // Pastikan relasi 'messages' ada di model WishNote
-            ->latest() // Sama dengan orderBy('created_at', 'desc')
+        // 4. Aktivitas Terbaru (Misalnya 5 pesan terakhir yang dibuat)
+        // Kita ambil 5 pesan terakhir beserta info usernya untuk ditampilkan di dashboard
+        $recentActivities = Message::with('user')
+            ->latest()
             ->take(5)
             ->get();
 
-        // Kirim semua data ke view
+        // Kirim semua variabel ke View
         return view('admin.dashboard', compact(
-            'totalCatatan', 
+            'totalUsers', 
             'activeUsers', 
-            'catatanPrivate', 
-            'recentActivities'
+            'totalCatatan', 
+            'catatanPrivate',
+            'catatanPublic',
+            'totalMessages',
+            'recentActivities' // Variabel baru yang ditambahkan
         ));
     }
 }

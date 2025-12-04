@@ -9,27 +9,31 @@ class WishNote extends Model
 {
     use HasFactory;
 
-    // Pastikan fillable sesuai dengan migrasi wish_notes
     protected $fillable = [
-        'id', 
-        'judul', 
-        'deskripsi_singkat',  
-        'tipe_wadah',    // 'pohon', 'mading', 'mailbox'
-        'privasi', // 'public', 'private'
-        'like_count',
-        'users_id'
+        'users_id', // Kolom di database (Foreign Key)
+        'judul',
+        'deskripsi_singkat',
+        'tipe_wadah',
+        'privasi',
+        'like_count'
     ];
 
-    // Relasi ke User (Pemilik WishNote)
+    /**
+     * Relasi ke User (Pemilik)
+     */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        // PERBAIKAN: Tambahkan parameter kedua 'users_id'
+        // Ini memberitahu Laravel: "Foreign Key di tabel ini bernama 'users_id', bukan 'user_id'"
+        return $this->belongsTo(User::class, 'users_id');
     }
 
-    // PERBAIKAN DI SINI:
-    // Ganti TreeMessage::class menjadi Message::class
+    /**
+     * Relasi ke Pesan (Isi WishNote)
+     */
     public function messages()
     {
-        return $this->hasMany(Message::class, 'wish_note_id'); // Pastikan foreign key sesuai ('wishnote_id')
+        // Pastikan parameter kedua sesuai dengan kolom di tabel messages ('wish_note_id')
+        return $this->hasMany(Message::class, 'wish_note_id');
     }
 }

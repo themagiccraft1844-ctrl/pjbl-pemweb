@@ -3,44 +3,58 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\WishNote; // Menggunakan satu model untuk semua
+use App\Models\WishNote;
 use Illuminate\Support\Facades\Auth;
 
 class SkinController extends Controller
 {
-    /**
-     * FUNGSI UTAMA (PRIVATE)
-     * Menangani semua logika pengambilan data, like, dan keamanan.
-     * Digunakan ulang oleh showTree, showMading, dan showMailbox.
-     */
     private function getNoteAndCheckAccess($id, $typeLabel = 'Konten')
     {
-        // 1. Ambil Data (Pakai WishNote sesuai request)
-        // Gunakan with('messages') agar pesan/bola-bola ikut terambil
-        $note = WishNote::with('messages')->findOrFail($id);
+        // 1. Ambil Note TANPA eager loading messages dulu
+        $note = WishNote::findOrFail($id);
 
-        // 2. Logika Cek Like (Session Based)
-        $isLiked = false;
-        $likedTrees = session()->get('liked_trees', []);
-        
-        if (in_array($note->id, $likedTrees)) {
-            $isLiked = true;
-        }
-
-        // 3. Logika Cek Privasi
-        // Perhatian: Pastikan nama kolom di database Anda 'privasi' atau 'privacy'.
-        // Saya menggunakan 'privasi' sesuai standar file Tree.php Anda sebelumnya.
-        // Jika di database namanya 'privacy', ubah kode di bawah ini.
+        // 2. Cek Privasi WADAH (WishNote)
         $statusPrivasi = $note->privasi ?? $note->privacy ?? 'public'; 
-        
-        // Perhatian: Pastikan nama kolom foreign key adalah 'user_id' atau 'users_id'.
-        // Saya menggunakan 'user_id' (standar Laravel). 
-        $pemilikId = $note->user_id ?? $note->users_id;
+        $pemilikId = $note->users_id ?? $note->user_id;
+        $currentUserId = Auth::id();
 
         if ($statusPrivasi === 'private') {
-            if (Auth::id() !== $pemilikId) {
-                abort(403, "$typeLabel ini bersifat privat dan hanya bisa dilihat pemiliknya.");
+            if ($currentUserId !== $pemilikId) {
+                abort(403, "$typeLabel ini bersifat privat.");
             }
+        }
+
+        // 3. Ambil & Filter PESAN (Messages)
+        // Aturan: 
+        // - Pesan Public: Semua orang bisa lihat
+        // - Pesan Private: Hanya bisa dilihat oleh Pemilik WishNote & Penulis Pesan itu sendiri
+        
+        $messages = $note->messages()
+            ->where(function($query) use ($currentUserId, $pemilikId) {
+                // Tampilkan jika Public
+                $query->where('visibility', 'public')
+                // ATAU jika Private TAPI user sekarang adalah Pemilik WishNote
+                      ->orWhere(function($q) use ($currentUserId, $pemilikId) {
+                          $q->where('visibility', 'private')
+                            ->whereRaw("? = ?", [$currentUserId, $pemilikId]); 
+                      })
+                // ATAU jika Private TAPI user sekarang adalah Penulis Pesan itu
+                      ->orWhere(function($q) use ($currentUserId) {
+                          $q->where('visibility', 'private')
+                            ->where('user_id', $currentUserId);
+                      });
+            })
+            ->latest()
+            ->get();
+
+        // Masukkan messages yang sudah difilter kembali ke objek note (secara manual)
+        $note->setRelation('messages', $messages);
+
+        // 4. Cek Like
+        $isLiked = false;
+        $likedNotes = session()->get('liked_notes', []);
+        if (in_array($note->id, $likedNotes)) {
+            $isLiked = true;
         }
 
         return [
@@ -49,44 +63,21 @@ class SkinController extends Controller
         ];
     }
 
-    /**
-     * Menampilkan Pohon Natal
-     */
     public function showTree($id)
     {
         $result = $this->getNoteAndCheckAccess($id, 'Pohon Natal');
-        
-        // Kirim ke view 'pohon'
-        // Variabel 'tree' di view akan berisi data WishNote
-        return view('pohon', [
-            'tree' => $result['data'],
-            'isLiked' => $result['isLiked'],
-            'id' => $id
-        ]);
+        return view('pohon', ['tree' => $result['data'], 'isLiked' => $result['isLiked'], 'id' => $id]);
     }
 
-    /**
-     * Menampilkan Mading
-     */
     public function showMading($id)
     {
         $result = $this->getNoteAndCheckAccess($id, 'Mading');
-
-        return view('mading', [
-            'mading' => $result['data'],
-            'id' => $id
-        ]);
+        return view('mading', ['mading' => $result['data'], 'isLiked' => $result['isLiked'], 'id' => $id]);
     }
 
-    /**
-     * Menampilkan Mailbox
-     */
     public function showMailbox($id)
     {
         $result = $this->getNoteAndCheckAccess($id, 'Kotak Surat');
-
-        return view('mailbox', [
-            'mailbox' => $result['data']
-        ]);
+        return view('mailbox', ['mailbox' => $result['data'], 'isLiked' => $result['isLiked'], 'id' => $id]);
     }
 }
