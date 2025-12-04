@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 class RegisterController extends Controller
 {
     public function store(Request $request) {
+
+        // Cek tabel banned
+        if (\App\Models\BannedEmail::where('email', $request->email)->exists()) {
+            return back()->withErrors(['email' => 'Email ini telah dibanned dari sistem kami.']);
+        }
         // Validate the form data
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',

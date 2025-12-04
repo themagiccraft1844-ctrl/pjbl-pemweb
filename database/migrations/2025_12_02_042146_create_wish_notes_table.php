@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('deskripsi_singkat');
             $table->string('tipe_wadah');
             $table->string('privasi');
-            $table->unsignedBigInteger('like_count');
+            $table->unsignedBigInteger('like_count')->nullable();
             $table->unsignedBigInteger('users_id')->nullable();
             $table->foreign('users_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();

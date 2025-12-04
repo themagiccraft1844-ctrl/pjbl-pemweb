@@ -83,22 +83,32 @@
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav align-items-center">
-                    <li class="nav-item me-3"><a class="nav-link text-muted" href="#">Jelajahi</a></li>
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-muted" href="#" data-bs-toggle="modal" data-bs-target="#exploreModal">
+                            <i class="fas fa-compass me-1"></i> Jelajahi
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
                             <span class="me-2 fw-bold text-dark">{{ auth()->user()->name ?? 'Guest' }}</span>
                             <img src="https://ui-avatars.com/api/?name={{ auth()->user()->name ?? 'Guest' }}&background=random" class="nav-profile-img">
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow p-2" style="border-radius: 15px;">
                             <li><a class="dropdown-item rounded" href="profil"><i class="fas fa-user-circle me-2 text-primary"></i> Profile</a></li>
                             <li><a class="dropdown-item rounded" href="friendlist"><i class="fas fa-user-plus me-2 text-success"></i> Teman</a></li>
+                            @if(auth()->check() && auth()->user()->role === 'admin')
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item rounded fw-bold text-purple" href="{{ route('admin.dashboard') }}" style="color: #8A2BE2;">
+                                        <i class="fas fa-user-shield me-2"></i> Admin Panel
+                                    </a>
+                                </li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
-                            @auth
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <li><button type="submit" class="text-textMuted hover:text-white transition-colors text-sm font-semibold uppercase tracking-wider"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></li>
+                                <li><button type="submit" class="dropdown-item rounded text-danger"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></li>
                             </form>
-                            @endauth
                         </ul>
                     </li>
                 </ul>
@@ -176,32 +186,52 @@
                 </article>
             </section>
             @endforeach
-                                <form action="/show">
-                        <input type="number" name="id">
-                        <input type="submit">
-                    </form>
             @endisset
-            @isset($wishnotesId)
-                <section class="col-12 col-sm-6 col-lg-4 filter-item friend-card" data-category="friends">
-                <article class="wish-card shadow-sm" onclick="openDetail({{ $wishnotesId->id }}, '{{ $wishnotesId->tipe_wadah }}')">
-                    <div class="skin-badge skin-mading"><i class="fa-solid fa-note-sticky"></i></div>
-                    <div class="card-body mt-4">
-                        <h5 class="card-title">{{ $wishnotesId->judul }}</h5>
-                        <p class="card-text text-truncate">{{  $wishnotesId->deskripsi_singkat }}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="status-pill status-public">Public</span>
-                            <small class="text-muted"><i class="fas fa-envelope me-1"></i>  {{ $wishnotesId->messages_count ?? 0  }}Pesan</small>
-                        </div>
-                        <hr class="my-3 text-muted opacity-25">
-                        <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name=Adit&background=random" class="rounded-circle me-2" width="25">
-                            <small class="text-muted">by {{ $wishnotesId->user->name ?? 'Unknown' }}</small>
-                        </div>
-                    </div>
-                </article>
-            </section>
+            @isset($friendsWishnotes)
+                @foreach($friendsWishnotes as $friendNote)
+                    <section class="col-12 col-sm-6 col-lg-4 filter-item friend-card" data-category="friends">
+                        <article class="wish-card shadow-sm" onclick="openDetail({{ $friendNote->id }}, '{{ $friendNote->tipe_wadah }}')">
+                            
+                            {{-- Badge Icon Sesuai Tipe --}}
+                            <div class="skin-badge 
+                                {{ $friendNote->tipe_wadah == 'tree' ? 'skin-tree' : ($friendNote->tipe_wadah == 'mading' ? 'skin-mading' : 'skin-mailbox') }}">
+                                <i class="fa-solid
+                                    {{ $friendNote->tipe_wadah == 'tree' ? 'fa-tree' : ($friendNote->tipe_wadah == 'mading' ? 'fa-note-sticky' : 'fa-envelope-open-text') }}">
+                                </i>
+                            </div>
+
+                            <div class="card-body mt-4">
+                                <h5 class="card-title">{{ $friendNote->judul }}</h5>
+                                <p class="card-text text-truncate">{{ $friendNote->deskripsi_singkat }}</p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    {{-- Status Pill --}}
+                                    <span class="status-pill {{ $friendNote->privasi == 'public' ? 'status-public' : 'status-private' }}">
+                                        {{ ucfirst($friendNote->privasi) }}
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-envelope me-1"></i> {{ $friendNote->messages_count ?? 0 }} Pesan
+                                    </small>
+                                </div>
+                                
+                                <hr class="my-3 text-muted opacity-25">
+                                
+                                {{-- Info Pembuat (Teman) --}}
+                                <div class="d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($friendNote->user->name ?? 'Unknown') }}&background=random" 
+                                         class="rounded-circle me-2" width="25">
+                                    <small class="text-muted">by {{ $friendNote->user->name ?? 'Unknown' }}</small>
+                                </div>
+                            </div>
+                        </article>
+                    </section>
+                @endforeach
             @endisset
-        </div>
+            @if(isset($friendsWishnotes) && $friendsWishnotes->isEmpty())
+                 <div class="col-12 text-center py-5 filter-item d-none" data-category="friends">
+                    <p class="text-muted">Teman-temanmu belum membuat Wishnote apapun (atau belum di-acc).</p>
+                 </div>
+            @endif
     </div>
 
     <!-- Modal -->
@@ -248,6 +278,63 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="exploreModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg"> <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-secondary">🌍 Jelajahi Harapan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    
+                    <div class="input-group mb-4 shadow-sm rounded-pill overflow-hidden">
+                        <span class="input-group-text border-0 bg-white ps-3"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="searchExplore" class="form-control border-0 py-2" placeholder="Cari judul, deskripsi, atau nama pembuat..." style="box-shadow: none;">
+                    </div>
+
+                    <div class="explore-list" style="max-height: 400px; overflow-y: auto;">
+                        <div class="row g-3" id="exploreResults">
+                            @isset($exploreWishnotes)
+                                        @foreach ($exploreWishnotes as $note)
+                                            {{-- Tidak perlu cek if privasi public lagi di sini karena sudah difilter di Controller, tapi untuk jaga-jaga boleh saja --}}
+                                            <div class="col-12 explore-item">
+                                                <div class="card border-0 shadow-sm h-100" style="background: #f8f9fa; border-radius: 15px; cursor: pointer; transition: transform 0.2s;" 
+                                                        onclick="openDetail({{ $note->id }}, '{{ $note->tipe_wadah }}'); document.getElementById('closeExplore').click();">
+                                                    
+                                                    <div class="card-body d-flex justify-content-between align-items-center">
+                                                        <div style="overflow: hidden;">
+                                                            <h6 class="fw-bold mb-1 text-dark search-target-title">{{ $note->judul }}</h6>
+                                                            <small class="text-muted d-block text-truncate search-target-desc" style="max-width: 300px;">
+                                                                {{ $note->deskripsi_singkat }}
+                                                            </small>
+                                                            <small class="text-primary search-target-user" style="font-size: 0.75rem;">
+                                                                <i class="fas fa-user-circle me-1"></i> {{ $note->user->name ?? 'Unknown' }}
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <span class="badge rounded-pill bg-white text-secondary shadow-sm mb-1">
+                                                                <i class="fas {{ $note->tipe_wadah == 'tree' ? 'fa-tree' : ($note->tipe_wadah == 'mading' ? 'fa-note-sticky' : 'fa-envelope-open-text') }}"></i>
+                                                            </span>
+                                                            <div class="small text-muted">{{ $note->messages_count ?? 0 }} <i class="fas fa-comment-dots"></i></div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endisset
+                            
+                            <div id="noResults" class="text-center py-5 d-none">
+                                <i class="fas fa-ghost fa-3x text-muted mb-3 opacity-50"></i>
+                                <p class="text-muted">Tidak ditemukan harapan dengan kata kunci tersebut.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <button id="closeExplore" type="button" class="d-none" data-bs-dismiss="modal"></button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -284,6 +371,32 @@
                     document.getElementById('hero-icon').innerText = hero.icon;
                 });
             });
+        });
+        document.getElementById('searchExplore').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let items = document.querySelectorAll('.explore-item');
+            let hasResults = false;
+
+            items.forEach(function(item) {
+                let title = item.querySelector('.search-target-title').innerText.toLowerCase();
+                let desc = item.querySelector('.search-target-desc').innerText.toLowerCase();
+                let user = item.querySelector('.search-target-user').innerText.toLowerCase();
+
+                if (title.includes(filter) || desc.includes(filter) || user.includes(filter)) {
+                    item.classList.remove('d-none');
+                    hasResults = true;
+                } else {
+                    item.classList.add('d-none');
+                }
+            });
+
+            // Tampilkan pesan "Tidak ditemukan" jika kosong
+            let noResultsMsg = document.getElementById('noResults');
+            if (hasResults) {
+                noResultsMsg.classList.add('d-none');
+            } else {
+                noResultsMsg.classList.remove('d-none');
+            }
         });
     </script>
 </body>

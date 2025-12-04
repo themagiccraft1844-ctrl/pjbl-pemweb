@@ -183,6 +183,12 @@
         </div>
         
         <h2>Daftar Akun</h2>
+        @if (session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" style="font-size: 0.9rem; text-align: left;">
+            <i class="fa-solid fa-circle-exclamation me-2"></i> {{ session('warning') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
         <p class="subtitle">Bergabunglah dan bagikan harapanmu!</p>
 
         @if ($errors->any())
@@ -207,7 +213,8 @@
             <!-- Email -->
             <div class="input-group">
                 <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
-                <input type="email" class="form-control" id="email" placeholder="Alamat Email" name="email" required>
+                {{-- Tambahkeun value="{{ old('email') }}" ameh user teu kudu ngetik ulang --}}
+                <input type="email" class="form-control" id="email" placeholder="Alamat Email" name="email" value="{{ old('email') }}" required>
             </div>
 
             <!-- Password -->

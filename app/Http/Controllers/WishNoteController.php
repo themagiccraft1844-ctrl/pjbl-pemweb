@@ -34,6 +34,10 @@ class WishNoteController extends Controller
             'tipe_wadah' => 'required',
             'privasi' => 'required',
         ]);
+        // Cek Suspend Ringan (Mute)
+        if ($user && $user->suspension_type == 'light' && $user->isSuspended()) {
+            return back()->with('error', 'Anda sedang dalam masa hukuman (Mute). Tidak bisa memposting hingga besok.');
+        }
         // Create the user
         if (auth()->check()) {
             $userId = auth()->user()->id;

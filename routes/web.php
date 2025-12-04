@@ -1,63 +1,95 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\wishNoteController;
+use App\Http\Controllers\WishNoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SkinController;
+use App\Http\Controllers\FriendController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminNoteController;
+use App\Http\Controllers\AdminUserController;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/pegawai',[PegawaiController::class,'index']);
-Route::post('/pegawai/store',[PegawaiController::class,'store']);
+// --- 1. Halaman Guest (Hanya bisa diakses jika BELUM login) ---
+Route::middleware('guest')->group(function () {
+    // Login & Register
+    Route::view('/login', 'login')->name('login');
+    Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/show', [DashboardController::class, 'show'])->name('dashboard');
+    Route::view('/register', 'register')->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 
-// Route::get('/dashboard',function () {
-//     return view('dashboard');
-// })->name('dashboard');
-Route::get('/login',function () {
-    return view('login');
-})->name('login')->middleware('guest');
-Route::get('/register',function () {
-    return view('register');
-})->middleware('guest');
-Route::get('/lupapw',function () {
-    return view('lupapw');
+    Route::view('/lupapw', 'lupapw');
 });
-Route::get('/profil',function () {
-    return view('profil');
+
+// --- 2. Halaman Auth (Hanya bisa diakses jika SUDAH login) ---
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [LogoutController::class, 'index'])->name('logout');
+    
+    // WishNote Actions (Membuat & Menghapus Catatan)
+    Route::post('/wishnote', [WishNoteController::class, 'store'])->name('wishnote.store');
+    Route::delete('/wishnotes/{id}', [WishNoteController::class, 'destroy'])->name('wishnotes.destroy');
 });
-Route::get('/detail',function () {
-    return view('detail');
+
+// --- 3. Dashboard & Tampilan ---
+Route::controller(DashboardController::class)->group(function () {
+    Route::get('/dashboard', 'index')->name('dashboard');
+    Route::get('/show', 'show')->name('dashboard.show'); 
 });
-Route::get('/friendlist',function () {
-    return view('friendlist');
+
+// --- 4. Halaman Statis / Umum ---
+Route::view('/profil', 'profil');
+Route::view('/detail', 'detail');
+Route::view('/friendlist', 'friendlist');
+
+// --- 5. Skin Routes (Pohon, Mading, Mailbox) ---
+Route::controller(SkinController::class)->group(function () {
+    Route::get('/pohon/{id}', 'showTree');
+    Route::get('/mading/{id}', 'showMading');
+    Route::get('/mailbox/{id}', 'showMailbox');
 });
-// Route::get('/pohon',function () {
-//     return view('pohon');
-// });
-// Route::get('/mading',function () {
-//     return view('mading');
-// });
-// Route::get('/mailbox',function () {
-//     return view('mailbox');
-// });
 
 
-Route::post('/login', [LoginController::class, 'store'])->name('login.store');
-Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
-Route::post('/logout', [LogoutController::class, 'index'])->name('logout')->middleware('auth');
-Route::post('/wishnote', [WishNoteController::class, 'store'])->name('wishnote.store');
-
-Route::delete('/wishnotes/{id}', [WishNoteController::class, 'destroy'])->name('wishnotes.destroy');
-
-Route::get('/pohon/{id}', [SkinController::class, 'showTree']);
-Route::get('/mading/{id}', [SkinController::class, 'showMading']);
-Route::get('/mailbox/{id}', [SkinController::class, 'showMailbox']);
+Route::middleware('auth')->group(function () {
+    Route::get('/friendlist', [FriendController::class, 'index'])->name('friendlist');
+    Route::post('/friend/add/{id}', [FriendController::class, 'addFriend'])->name('friend.add');
+    Route::delete('/friend/remove/{id}', [FriendController::class, 'removeFriend'])->name('friend.remove');
+});
 
 
+
+
+// --- ROUTE KHUSUS ADMIN ---
+// Middleware 'auth' = harus login
+// Middleware 'admin' = harus punya role admin (yang baru kita buat)
+Route::middleware(['auth', 'admin'])->group(function () {
+    
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+    // kelola catetan yang ini rutenya
+    Route::get('/admin/notes', [AdminNoteController::class, 'index'])->name('admin.notes.index');
+    Route::delete('/admin/notes/{id}', [AdminNoteController::class, 'destroy'])->name('admin.notes.destroy');
+
+    // kalo  ini kelola user
+    Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+
+    // TAMBAHAN: UPDATE ROLE
+    Route::patch('/admin/users/{id}/promote', [AdminUserController::class, 'makeAdmin'])->name('admin.users.promote');
+    Route::patch('/admin/users/{id}/demote', [AdminUserController::class, 'removeAdmin'])->name('admin.users.demote');
+
+    // VIEW MESSAGES & DELETE
+    Route::get('/admin/notes/{id}/messages', [AdminNoteController::class, 'show'])->name('admin.notes.show');
+    Route::delete('/admin/messages/{id}', [AdminNoteController::class, 'deleteMessage'])->name('admin.messages.destroy');
+    
+    // WARN USER
+    Route::post('/admin/users/warn', [AdminNoteController::class, 'warnUser'])->name('admin.users.warn');
+});

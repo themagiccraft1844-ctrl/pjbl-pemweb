@@ -145,8 +145,15 @@
             <h2>Wishnotes</h2>
             <p class="subtitle">Kirim doa & harapanmu di sini!</p>
 
+            <!-- lamun salah password -->
+            @if (session('salahtau'))
+                <div class="alert alert-warning alert-dismissible fade show" role="alert" style="font-size: 0.9rem; text-align: left;">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i> {{ session('salahtau') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <!-- error -->
-             @if ($errors->any())
+            @if ($errors->any())
                         <div class="mb-4 p-4 bg-red-600 text-red rounded-md">
                             <ul class="list-disc list-inside">
                                 @foreach ($errors->all() as $error)
@@ -154,7 +161,7 @@
                                 @endforeach
                             </ul>
                         </div>
-                @endif
+            @endif
 
             <form id="loginForm" method="POST" action="{{ route('login.store')}}">
                 @csrf

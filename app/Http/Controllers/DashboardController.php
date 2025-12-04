@@ -4,35 +4,68 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\WishNote;
+use App\Models\Friendship; // Pastikan Model Friendship di-import
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // Ambil semua WishNote + relasi user + jumlah pesan (messages_count)
-        $wishnotes = WishNote::with('user')
-            ->withCount('messages')     // <--- INI DITARO DI SINI
-            ->orderBy('created_at', 'desc')
-            ->get();
-      // Jika ada user login → hanya ambil wishnote miliknya
-    if (auth()->check()) {
-        $wishnotes = WishNote::where('users_id', auth()->id())
+        // 1. JELAJAHI (Semua Public)
+        $exploreWishnotes = WishNote::where('privasi', 'public')
             ->with('user')
             ->withCount('messages')
             ->orderBy('created_at', 'desc')
             ->get();
-    } else {
-        // Guest tidak boleh lihat apa-apa
-        $wishnotes = collect();
-    }
 
-    return view('dashboard', compact('wishnotes'));
+        // 2. Variable Default
+        $wishnotes = collect();        // Milik Saya
+        $friendsWishnotes = collect(); // Milik Teman (Accepted)
+
+        if (auth()->check()) {
+            $userId = auth()->id();
+
+            // A. Ambil Wishnote Milik Sendiri
+            $wishnotes = WishNote::where('users_id', $userId)
+                ->with('user')
+                ->withCount('messages')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // B. Ambil Wishnote Milik Teman (Status Accepted)
+            // Cari hubungan dimana user jadi sender ATAU receiver, dan statusnya accepted
+            $friendships = Friendship::where(function($q) use ($userId) {
+                    $q->where('sender_id', $userId)
+                      ->orWhere('receiver_id', $userId);
+                })
+                ->where('status', 'accepted') // Validasi status accepted
+                ->get();
+
+            // Kumpulkan ID teman
+            $friendIds = $friendships->map(function ($f) use ($userId) {
+                return $f->sender_id == $userId ? $f->receiver_id : $f->sender_id;
+            });
+
+            // Ambil Wishnote berdasarkan ID teman
+            // Opsional: Tambahkan where('privasi', 'public') jika teman cuma boleh lihat yang public
+            $friendsWishnotes = WishNote::whereIn('users_id', $friendIds)
+                ->with('user')
+                ->withCount('messages')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return view('dashboard', compact('wishnotes', 'exploreWishnotes', 'friendsWishnotes'));
     }
 
     public function show(Request $request)
     {
         $wishnotesId = WishNote::find($request->id);
-        return view('dashboard', compact('wishnotesId'));
-
+        // Tetap kirim variabel lain agar view tidak error
+        $wishnotes = collect();
+        $exploreWishnotes = collect();
+        $friendsWishnotes = collect();
+        
+        return view('dashboard', compact('wishnotesId', 'wishnotes', 'exploreWishnotes', 'friendsWishnotes'));
     }
 }

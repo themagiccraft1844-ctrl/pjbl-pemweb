@@ -48,6 +48,10 @@ class TreeController extends Controller
      */
     public function store(Request $request)
     {
+        // Cek Suspend Ringan (Mute)
+        if ($user && $user->suspension_type == 'light' && $user->isSuspended()) {
+            return back()->with('error', 'Anda sedang dalam masa hukuman (Mute). Tidak bisa memposting hingga besok.');
+        }  
         TreeMessage::create([
             'tree_id' => $request->tree_id,
             'user_id' => $request->user_id,
