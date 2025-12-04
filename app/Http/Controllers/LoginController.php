@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\BannedEmail; // Pastikan model ini ada
 
 class LoginController extends Controller
 {
@@ -19,46 +20,47 @@ class LoginController extends Controller
             'password' => 'required|min:6',
         ]);
 
-        // 1. Cek apakah email ada di tabel BannedEmail?
-        $isBanned = \App\Models\BannedEmail::where('email', $request->email)->exists();
+        // 2. Cek apakah email ada di tabel BannedEmail? (Global Ban)
+        // Gunakan string class path lengkap atau use di atas
+        $isBanned = BannedEmail::where('email', $request->email)->exists();
+        
         if ($isBanned) {
-            Auth::logout();
+            // Tidak perlu Auth::logout() karena belum login, tapi aman saja kalau ada
             return back()->withErrors(['email' => 'AKUN DIBANNED PERMANEN. Hubungi admin jika ini kesalahan.']);
         }
 
-        // 2. Cek apakah user kena Suspend Menengah (Tidak boleh login)?
-        if (auth()->user()->suspension_type == 'medium' && auth()->user()->isSuspended()) {
-            $date = auth()->user()->suspended_until->format('d M Y');
-            Auth::logout(); // Tendang keluar
-            return back()->withErrors(['email' => "Akun disuspend hingga $date karena pelanggaran aturan."]);
-        }
-        
-        // 2. Cek apakah Email ada di database?
+        // 3. Ambil data User dari Database berdasarkan Email
         $user = User::where('email', $request->email)->first();
 
-        // 3. LOGIKA: Jika Email TIDAK DITEMUKAN -> Redirect ke Register
+        // 4. LOGIKA: Jika Email TIDAK DITEMUKAN -> Redirect ke Register
         if (!$user) {
             return redirect()->route('register')
                 ->with('warning', 'Silahkan daftar terlebih dahulu.')
-                ->withInput(['email' => $request->email]); // Kirim balik emailnya biar gak ngetik ulang
+                ->withInput(['email' => $request->email]); 
         }
 
-        // 4. LOGIKA: Jika Email ADA, coba cocokkan password (Login)
+        // 5. LOGIKA: Jika Email ADA, Cek Suspend SEBELUM Login
+        // Perbaikan: Gunakan variabel $user, JANGAN auth()->user() karena belum login
+        if ($user->suspension_type == 'medium' && $user->isSuspended()) {
+            // Pastikan suspended_until tidak null sebelum format
+            $date = $user->suspended_until ? $user->suspended_until->format('d M Y') : 'waktu yang ditentukan';
+            
+            return back()->withErrors(['email' => "Akun disuspend hingga $date karena pelanggaran aturan."]);
+        }
+
+        // 6. Coba Login (Mencocokkan Password)
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            
+            // Cek Role untuk Redirect
             if (auth()->user()->role === 'admin') {
                 return redirect()->route('admin.dashboard'); 
             }
             return redirect()->intended('dashboard');
         }
         
-        if (!Auth::attempt($credentials)) {
-            return back()->with('salahtau', 'Email atau Password salah!');
-                // -> withInput(['email' => $request->email]); gausah lah ya, suruh ketik ulang email dan password aja
-        }
-
-        // 5. Erorr yang lain
-        return back()->withErrors(['GALAT',])->withInput();
+        // 7. Jika Password Salah
+        return back()->with('salahtau', 'Email atau Password salah!');
+        // Sesuai request: tidak pakai withInput agar user mengetik ulang
     }
-
 }

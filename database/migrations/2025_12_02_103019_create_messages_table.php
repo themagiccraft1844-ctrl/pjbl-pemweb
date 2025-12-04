@@ -6,26 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-    Schema::create('messages', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('wishnote_id'); // <--- KANAN HARUS SAMA DENGAN hasMany FK
-    $table->unsignedBigInteger('user_id')->nullable();
-    $table->text('body');
-    $table->timestamps();
-
-    $table->foreign('wishnote_id')->references('id')->on('wish_notes')->onDelete('cascade');
-});
-
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            
+            // Relasi ke tabel WishNote (Wadah Utama)
+            // Pastikan tabel wish_notes sudah dibuat di migrasi sebelumnya (timestamp lebih kecil)
+            $table->foreignId('wish_note_id')->constrained('wish_notes')->onDelete('cascade');
+            
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            
+            // Data Konten
+            $table->string('name')->default('Anonim'); // Nama Pengirim
+            $table->text('message'); // Isi Pesan
+            
+            // Data Visual (Untuk Pohon Natal / Stiker Mading)
+            $table->string('color')->nullable(); // Warna Bola/Kertas
+            $table->string('x')->nullable(); // Koordinat X
+            $table->string('y')->nullable(); // Koordinat Y
+            
+            $table->enum('visibility', ['public', 'private'])->default('public');
+            
+            $table->timestamps();
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('messages');

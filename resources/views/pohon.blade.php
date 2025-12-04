@@ -219,7 +219,7 @@
                 </div>
                 <div class="modal-body">
                     
-                    <form action="/api/pohon/store" method="POST">
+                    <form action="/pohon/store" method="POST">
                         @csrf
                         
                         <input type="hidden" name="tree_id" value="{{ $tree->id }}">

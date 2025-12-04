@@ -6,15 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $fillable = ['wishnote_id', 'user_id', 'body'];
+    protected $fillable = [
+        'wish_note_id', // Foreign Key
+        'user_id',
+        'name',
+        'message',
+        'color',
+        'x',
+        'y',
+        'visibility'
+    ];
 
-    public function wishnote()
+    // Relasi balik ke WishNote
+    public function wishNote()
     {
-        return $this->belongsTo(\App\Models\WishNote::class, 'wishnote_id');
+        return $this->belongsTo(WishNote::class, 'wish_note_id');
     }
 
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 }

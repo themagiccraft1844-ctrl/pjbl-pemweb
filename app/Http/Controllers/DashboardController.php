@@ -14,7 +14,7 @@ class DashboardController extends Controller
         // 1. JELAJAHI (Semua Public)
         $exploreWishnotes = WishNote::where('privasi', 'public')
             ->with('user')
-            ->withCount('messages')
+            ->withCount('messages') // Pastikan relasi 'messages' di Model WishNote menggunakan foreign key 'wishnote_id'
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -26,7 +26,7 @@ class DashboardController extends Controller
             $userId = auth()->id();
 
             // A. Ambil Wishnote Milik Sendiri
-            $wishnotes = WishNote::where('users_id', $userId)
+            $wishnotes = WishNote::where('users_id', $userId) // Pastikan kolom di DB adalah 'users_id' atau 'user_id'
                 ->with('user')
                 ->withCount('messages')
                 ->orderBy('created_at', 'desc')
@@ -54,8 +54,22 @@ class DashboardController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
         }
+        
+        $myTrees = $wishnotes->where('tipe_wadah', 'pohon');
+        $myMadings = $wishnotes->where('tipe_wadah', 'mading');
+        $myMailboxes = $wishnotes->where('tipe_wadah', 'mailbox');
+        $user = Auth::user();
 
-        return view('dashboard', compact('wishnotes', 'exploreWishnotes', 'friendsWishnotes'));
+        // Mengirim semua variabel yang mungkin dibutuhkan oleh view
+        return view('dashboard', compact(
+            'wishnotes', 
+            'exploreWishnotes', 
+            'friendsWishnotes',
+            'myTrees',
+            'myMadings',
+            'myMailboxes',
+            'user'
+        ));
     }
 
     public function show(Request $request)

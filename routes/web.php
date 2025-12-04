@@ -11,6 +11,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminNoteController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\TreeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,3 +94,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // WARN USER
     Route::post('/admin/users/warn', [AdminNoteController::class, 'warnUser'])->name('admin.users.warn');
 });
+
+
+Route::post('/pohon/store', [TreeController::class, 'store'])->name('pohon.store');
+
+// Hapus pesan
+Route::post('/pohon/delete', [TreeController::class, 'destroy'])->name('pohon.delete');
+
+// Like pohon
+Route::post('/pohon/like', [TreeController::class, 'toggleLike'])->name('pohon.like');
