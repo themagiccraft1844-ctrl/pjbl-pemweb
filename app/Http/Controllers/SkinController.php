@@ -19,8 +19,8 @@ class SkinController extends Controller
         $currentUserId = Auth::id();
 
         if ($statusPrivasi === 'private') {
-            if ($currentUserId !== $pemilikId) {
-                abort(403, "$typeLabel ini bersifat privat.");
+            if (Auth::id() !== $note->user_id && Auth::user()->role !== 'admin') {
+                abort(403, 'Anda tidak memiliki akses ke catatan private ini.');
             }
         }
 
