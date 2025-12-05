@@ -201,7 +201,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- <script>
+    <script>
         $(document).ready(function() {
             // Show/Hide Password
             $('#togglePassword').click(function() {
@@ -215,15 +215,7 @@
                     icon.removeClass('fa-eye').addClass('fa-eye-slash');
                 }
             });
-
-            // Login Logic
-            $('#loginForm').submit(function(e) {
-            e.preventDefault();
-                let btn = $('#btnLogin');
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
-                setTimeout(() => window.location.href = "dashboard", 1500);
-            });
         });
-    </script> -->
+    </script>
 </body>
 </html>

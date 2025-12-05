@@ -2,82 +2,122 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\WishNote; // Model Wadah (Pohon/Mading)
-use App\Models\Message;  // Model Pesan (Bola/Stiker)
+use App\Models\WishNote;
+use App\Models\Message; // GANTI TreeMessage MENJADI Message
 use App\Models\User;
+use App\Models\UserAlert;
+use App\Models\BannedEmail;
 
 class AdminNoteController extends Controller
 {
-    /**
-     * Menampilkan daftar semua WishNote
-     */
-    public function index()
+    // ==========================================
+    // BAGIAN 1: KELOLA CATATAN (Index & Destroy)
+    // ==========================================
+
+    // Menampilkan daftar semua catatan
+    public function index(Request $request)
     {
         $notes = WishNote::with('user')
             ->withCount('messages')
-            ->latest()
-            ->paginate(10);
+            ->latest();
+
+        // Fitur Pencarian Judul
+        if ($request->has('search')) {
+            $notes->where('judul', 'like', '%' . $request->search . '%')
+                  ->orWhere('deskripsi_singkat', 'like', '%' . $request->search . '%');
+        }
+
+        $notes = $notes->paginate(10);
 
         return view('admin.notes.index', compact('notes'));
     }
 
-    /**
-     * Menampilkan Detail WishNote beserta isinya (Dengan Filter & Pagination)
-     */
+    // Menghapus Catatan (Wishnote) Secara Utuh
+    public function destroy($id)
+    {
+        $note = WishNote::findOrFail($id);
+        $note->delete(); // Otomatis cascade delete pesan di dalamnya
+
+        return back()->with('success', 'Catatan berhasil dihapus oleh Admin.');
+    }
+
+    // ==========================================
+    // BAGIAN 2: MODERASI PESAN (Detail & Warn)
+    // ==========================================
+
+    // Menampilkan Detail Pesan dalam Tabel
     public function show(Request $request, $id)
     {
-        // 1. Ambil Note Utama
         $note = WishNote::with('user')->findOrFail($id);
 
-        // 2. Ambil Pesan (Messages) dengan Filter Pencarian & Pagination
-        // Ini penting agar variabel $messages tersedia di view
-        $query = Message::where('wish_note_id', $id) // Pastikan foreign key sesuai (wish_note_id / wishnote_id)
-            ->with('user'); // Eager load user pengirim pesan
+        // PERBAIKAN: Gunakan relasi 'messages' dari model WishNote
+        // Eager load 'user' (atau 'sender' tergantung model Message Anda)
+        // Di migrasi baru, message punya relasi ke User (user_id)
+        $messages = $note->messages()->with('user'); 
 
-        // Logika Pencarian dari View (name="search")
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('body', 'like', "%{$search}%") // Asumsi kolom isi pesan di DB adalah 'body'
-                  ->orWhere('sender', 'like', "%{$search}%"); // Asumsi kolom nama pengirim manual
-            });
+        // Fitur Cari Pesan Kasar
+        if ($request->has('search')) {
+            // PERBAIKAN: Kolom isi pesan di tabel messages biasanya 'body' atau 'message'
+            // Sesuaikan dengan migrasi Message Anda. Di diskusi kita sebelumnya pakai 'message' di Controller Tree.
+            $messages->where('message', 'like', '%' . $request->search . '%');
         }
 
-        $messages = $query->latest()->paginate(10); // Pagination 10 per halaman
+        $messages = $messages->latest()->paginate(20); 
 
         return view('admin.notes.show', compact('note', 'messages'));
     }
 
-    /**
-     * Menghapus WishNote (Wadah)
-     */
-    public function destroy($id)
-    {
-        $note = WishNote::findOrFail($id);
-        $note->delete(); // Cascade delete akan menghapus pesan di dalamnya
-
-        return redirect()->back()->with('success', 'WishNote berhasil dihapus.');
-    }
-
-    /**
-     * Menghapus Pesan Spesifik (Bola/Stiker)
-     */
+    // Hapus Pesan Spesifik (Sensor)
     public function deleteMessage($id)
     {
+        // PERBAIKAN: Gunakan Model Message
         $msg = Message::findOrFail($id);
         $msg->delete();
-
-        return redirect()->back()->with('success', 'Pesan berhasil dihapus.');
+        return back()->with('success', 'Pesan berhasil dihapus (disensor).');
     }
 
-    /**
-     * Memberikan Peringatan (Opsional)
-     */
+    // Berikan Peringatan / Hukuman ke User
     public function warnUser(Request $request)
     {
-        // Logika warning user bisa ditambahkan di sini
-        return redirect()->back()->with('success', 'Peringatan dikirim.');
+        $user = User::findOrFail($request->user_id);
+        $level = $request->level; 
+
+        // Simpan Riwayat Alert
+        UserAlert::create([
+            'user_id' => $user->id,
+            'level' => $level == 1 ? 'ringan' : ($level == 2 ? 'menengah' : 'berat'),
+            'pesan' => $request->pesan_admin
+        ]);
+
+        if ($level == 1) {
+            // RINGAN: Suspend 1 Hari
+            $user->update([
+                'suspended_until' => now()->addDay(),
+                'suspension_type' => 'light'
+            ]);
+            return back()->with('success', 'User diberi teguran RINGAN (Mute 1 Hari).');
+
+        } elseif ($level == 2) {
+            // MENENGAH: Suspend 7 Hari
+            $user->update([
+                'suspended_until' => now()->addWeek(),
+                'suspension_type' => 'medium'
+            ]);
+            return back()->with('success', 'User diberi teguran MENENGAH (Suspend Login 1 Minggu).');
+
+        } elseif ($level == 3) {
+            // BERAT: Hapus Akun & Banned Email
+            
+            BannedEmail::create([
+                'email' => $user->email,
+                'reason' => $request->pesan_admin,
+                'admin_name' => auth()->user()->name
+            ]);
+
+            $user->delete();
+
+            return back()->with('success', 'User BERHASIL DIBANNED PERMANEN dan akun dihapus.');
+        }
     }
 }

@@ -12,6 +12,12 @@
     <!-- Google Fonts: Nunito -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- PENTING: Untuk CSRF token di Laravel/Blade -->
+    <!-- Anda harus memastikan tag ini ada di Blade/Layout utama Anda -->
+    <meta name="csrf-token" content="{{ csrf_token() }}"> 
+
     <style>
         body {
             font-family: 'Nunito', sans-serif;
@@ -293,15 +299,52 @@
         /* Utility */
         .d-none { display: none !important; }
         .text-purple { color: #a18cd1; }
+
+        /* Modal / Custom Alert Style */
+        .custom-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1050;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            max-width: 350px;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1040;
+        }
+        .modal-hidden { display: none; }
     </style>
 
 </head>
 <body>
 
+    <!-- Custom Modal for Alerts/Confirmations (to replace alert() and confirm()) -->
+    <div id="customModal" class="modal-overlay modal-hidden">
+        <div class="custom-modal">
+            <h5 id="modalTitle" class="fw-bold text-purple mb-3">Notifikasi</h5>
+            <p id="modalMessage" class="text-muted mb-4">Pesan Anda di sini.</p>
+            <button id="modalConfirmBtn" class="btn btn-save d-none" style="width: 48%; float: right;">Ya</button>
+            <button id="modalCloseBtn" class="btn btn-secondary" style="width: 48%; float: left; border-radius: 50px; background: #eee; color: #555; border: none;">Tutup</button>
+        </div>
+    </div>
+
+
     <div class="profile-card">
         
         <!-- Back to Dashboard Button -->
-        <a href="dashboard" class="btn-back-dashboard" title="Kembali ke Dashboard">
+        <a href="/dashboard" class="btn-back-dashboard" title="Kembali ke Dashboard">
             <i class="fas fa-arrow-left"></i>
         </a>
 
@@ -312,10 +355,12 @@
                 <button class="btn-camera" title="Ganti Foto">
                     <i class="fas fa-camera"></i>
                 </button>
+                <!-- Hidden input for file upload -->
+                <input type="file" id="avatarInput" accept="image/*" class="d-none">
             </div>
             <h2 class="user-name">{{ auth()->user()->name ?? 'Guest' }}</h2>
             <p class="user-email">{{ auth()->user()->email ?? 'Guest' }}</p>
-            <span class="badge-member"><i class="fas fa-star me-1"></i> Wishnotes Member</span>
+            <span class="badge-member"><i class="fas fa-star me-1"></i> Wishnotes {{ auth()->user()->role ?? 'Member'}}</span>
         </div>
 
         <!-- Navigation Tabs (Only visible when not changing password) -->
@@ -332,18 +377,18 @@
                 <form id="profileForm">
                     <div class="mb-3">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" value="{{ auth()->user()->name ?? 'Guest' }}" required>
+                        <input type="text" class="form-control" name="user_nama" value="{{ auth()->user()->name ?? 'Guest' }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0 text-muted" style="border-radius: 15px 0 0 15px;">@</span>
-                            <input type="text" class="form-control" value="{{ auth()->user()->email ?? 'Guest' }}" style="border-radius: 0 15px 15px 0;">
+                            <input type="text" class="form-control" name="user_email" value="{{ auth()->user()->email ?? 'Guest' }}" style="border-radius: 0 15px 15px 0;">
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Bio Singkat</label>
-                        <textarea class="form-control" rows="2">Suka berbagi harapan dan mimpi-mimpi kecil ✨</textarea>
+                        <textarea class="form-control" name="user_bio" rows="2">Suka berbagi harapan dan mimpi-mimpi kecil ✨</textarea>
                     </div>
                     
                     <button type="submit" class="btn btn-save">
@@ -414,19 +459,29 @@
                     <div class="mb-3">
                         <label class="form-label">Password Saat Ini</label>
                         <div class="input-group">
-                            <input type="password" class="form-control" style="border-right: none; border-radius: 15px 0 0 15px;" required>
-                            <span class="input-group-text bg-white border-start-0" style="border-radius: 0 15px 15px 0; border: 2px solid #f0f0f0; border-left: none;">
+                            <input type="password" class="form-control" id="current_password" style="border-right: none; border-radius: 15px 0 0 15px;" required>
+                            <span class="input-group-text bg-white border-start-0 toggle-password" data-target="current_password" style="cursor: pointer; border-radius: 0 15px 15px 0; border: 2px solid #f0f0f0; border-left: none;">
                                 <i class="far fa-eye-slash text-muted small"></i>
                             </span>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password Baru</label>
-                        <input type="password" class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="new_password" style="border-right: none; border-radius: 15px 0 0 15px;" required>
+                            <span class="input-group-text bg-white border-start-0 toggle-password" data-target="new_password" style="cursor: pointer; border-radius: 0 15px 15px 0; border: 2px solid #f0f0f0; border-left: none;">
+                                <i class="far fa-eye-slash text-muted small"></i>
+                            </span>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Konfirmasi Password Baru</label>
-                        <input type="password" class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirm_password" style="border-right: none; border-radius: 15px 0 0 15px;" required>
+                            <span class="input-group-text bg-white border-start-0 toggle-password" data-target="confirm_password" style="cursor: pointer; border-radius: 0 15px 15px 0; border: 2px solid #f0f0f0; border-left: none;">
+                                <i class="far fa-eye-slash text-muted small"></i>
+                            </span>
+                        </div>
                     </div>
                     
                     <button type="submit" class="btn btn-save">
@@ -445,86 +500,239 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-            // Tab Switching Logic (Profile vs Settings)
-            $('.nav-btn').click(function() {
-                $('.nav-btn').removeClass('active');
-                $(this).addClass('active');
+<script>
+    id = {{ auth()->user()->id }}
+    $(document).ready(function() {
 
-                // Hide Password View if open
-                $('#change-password').addClass('d-none');
-                $('#mainNav').removeClass('d-none');
 
-                // Show Content
-                $('.tab-content').addClass('d-none').removeClass('fade-in');
-                let target = $(this).data('target');
-                $('#' + target).removeClass('d-none').addClass('fade-in');
-            });
+        // --- Custom Modal Functions (Replace alert and confirm) ---
+        function showModal(message, isConfirmation = false, onConfirm = null) {
+            $('#modalMessage').text(message);
+            $('#modalConfirmBtn').off('click').addClass('d-none');
+            $('#modalCloseBtn').text('Tutup').off('click');
+            
+            if (isConfirmation) {
+                $('#modalTitle').text('Konfirmasi');
+                $('#modalConfirmBtn').removeClass('d-none').click(function() {
+                    $('#customModal').addClass('modal-hidden');
+                    if (onConfirm) onConfirm();
+                });
+                $('#modalCloseBtn').click(function() {
+                    $('#customModal').addClass('modal-hidden');
+                }).text('Batal');
+            } else {
+                $('#modalTitle').text('Notifikasi');
+                $('#modalCloseBtn').click(function() {
+                    $('#customModal').addClass('modal-hidden');
+                });
+            }
+            $('#customModal').removeClass('modal-hidden');
+        }
 
-            // Go to Change Password View
-            $('#btnToChangePassword').click(function() {
-                $('#settings').addClass('d-none');
-                $('#mainNav').addClass('d-none'); // Hide tabs to focus on password
-                $('#change-password').removeClass('d-none').addClass('fade-in');
-            });
 
-            // Cancel Change Password
-            $('#btnCancelPassword').click(function() {
-                $('#change-password').addClass('d-none');
-                $('#mainNav').removeClass('d-none'); // Show tabs again
-                $('#settings').removeClass('d-none').addClass('fade-in');
-                $('.nav-btn[data-target="settings"]').addClass('active');
-            });
+        // --- KONFIGURASI AXIOS ---
+        // Asumsi base URL API adalah /api
+        const API_BASE_URL = '/api'; 
 
-            // Save Profile Logic
-            $('#profileForm').submit(function(e) {
-                e.preventDefault();
-                let btn = $(this).find('button[type="submit"]');
-                let originalText = btn.html();
+        // Setup CSRF Token (Ambil dari meta tag Laravel/Framework)
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        if (csrfToken) {
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+            axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        }
 
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+        // --- 1. NAVIGASI TAB UI ---
+        $('.nav-btn').click(function() {
+            $('.nav-btn').removeClass('active');
+            $(this).addClass('active');
+            $('#change-password').addClass('d-none');
+            $('#mainNav').removeClass('d-none');
+            $('.tab-content').addClass('d-none').removeClass('fade-in');
+            let target = $(this).data('target');
+            $('#' + target).removeClass('d-none').addClass('fade-in');
+        });
 
-                setTimeout(() => {
-                    btn.prop('disabled', false).html('<i class="fas fa-check me-2"></i> Tersimpan!');
+        $('#btnToChangePassword').click(function() {
+            $('#settings').addClass('d-none');
+            $('#mainNav').addClass('d-none');
+            $('#change-password').removeClass('d-none').addClass('fade-in');
+        });
+
+        $('#btnCancelPassword').click(function() {
+            $('#passwordForm')[0].reset(); // Reset form saat batal
+            $('#change-password').addClass('d-none');
+            $('#mainNav').removeClass('d-none');
+            $('#settings').removeClass('d-none').addClass('fade-in');
+            $('.nav-btn[data-target="settings"]').addClass('active');
+        });
+
+        // --- Toggle Password Visibility ---
+        $('.toggle-password').click(function() {
+            const targetId = $(this).data('target');
+            const targetInput = $('#' + targetId);
+            const icon = $(this).find('i');
+            
+            if (targetInput.attr('type') === 'password') {
+                targetInput.attr('type', 'text');
+                icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            } else {
+                targetInput.attr('type', 'password');
+                icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            }
+        });
+
+        // --- 2. LOGIC UPDATE PROFIL ---
+        $('#profileForm').submit(function(e) {
+            e.preventDefault();
+            let btn = $(this).find('button[type="submit"]');
+            let originalText = btn.html();
+
+            // Data Payload
+            const payload = {
+                name: $('input[name="user_nama"]').val(),
+                email: $('input[name="user_email"]').val(),
+                // Anda mungkin perlu mendapatkan ID pengguna dari backend atau variabel global jika menggunakan Laravel/Blade, 
+                // atau hapus jika API endpoint tidak memerlukan user_id
+                user_id: {{ auth()->user()->id ?? 'null' }} 
+            };
+
+            // Loading state
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+            axios.post(API_BASE_URL + '/user/update', payload)
+                .then(function(response) {
+                    // Success
+                    btn.html('<i class="fas fa-check me-2"></i> Tersimpan!');
+                    $('.user-name').text(payload.name);
+                    $('.user-email').text(payload.email);
+                    
                     setTimeout(() => {
-                        btn.html(originalText);
+                        btn.prop('disabled', false).html(originalText);
                     }, 2000);
-                }, 1000);
-            });
+                })
+                .catch(function(error) {
+                    // Error
+                    let errMsg = error.response?.data?.message || 'Terjadi kesalahan server';
+                    btn.prop('disabled', false).html('Gagal! Coba Lagi');
+                    showModal('Error: ' + errMsg); 
+                    
+                    setTimeout(() => { btn.html(originalText); }, 2000);
+                });
+        });
 
-            // Update Password Logic
-            $('#passwordForm').submit(function(e) {
-                e.preventDefault();
-                let btn = $(this).find('button[type="submit"]');
-                let originalText = btn.html();
+        // --- 3. LOGIC GANTI PASSWORD ---
+        $('#passwordForm').submit(function(e) {
+            e.preventDefault();
+            let btn = $(this).find('button[type="submit"]');
+            let originalText = btn.html();
 
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+            // Mengambil nilai berdasarkan ID yang baru ditambahkan
+            let currentPass = $('#current_password').val();
+            let newPass = $('#new_password').val();
+            let confirmPass = $('#confirm_password').val();
 
+            if(newPass !== confirmPass) {
+                showModal('Konfirmasi password baru tidak cocok!');
+                return;
+            }
+            
+            if(newPass.length < 8) { // Contoh validasi minimal 8 karakter
+                showModal('Password baru minimal 8 karakter.');
+                return;
+            }
+
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+            axios.post(API_BASE_URL + '/user/updatePassword', {
+                current_password: currentPass,
+                new_password: newPass,
+                new_password_confirmation: confirmPass,
+                user_id: {{auth()->user()->id}}
+            })
+            .then(function(response) {
+                btn.html('<i class="fas fa-check me-2"></i> Sukses!');
+                showModal('Password Anda berhasil diubah!');
                 setTimeout(() => {
-                    btn.prop('disabled', false).html('<i class="fas fa-check me-2"></i> Password Diganti!');
-                    setTimeout(() => {
-                        // Reset and go back
-                        $('#passwordForm')[0].reset();
-                        btn.html(originalText);
-                        $('#btnCancelPassword').click();
-                    }, 1500);
+                    $('#passwordForm')[0].reset();
+                    btn.prop('disabled', false).html(originalText);
+                    $('#btnCancelPassword').click(); // Kembali ke tab Settings
                 }, 1500);
-            });
-
-            // Logout Confirmation
-            $('.btn-logout').click(function() {
-                if(confirm('Apakah Anda yakin ingin keluar?')) {
-                    alert('Anda telah keluar.');
-                    window.location.href = 'login'; // Assuming this links back to login/main
-                }
-            });
-
-            // Camera Button Effect
-            $('.btn-camera').click(function() {
-                alert('Membuka galeri untuk memilih foto...');
+            })
+            .catch(function(error) {
+                btn.prop('disabled', false).html(originalText);
+                let errMsg = error.response?.data?.message || 'Password saat ini salah atau terjadi kesalahan validasi.';
+                showModal(errMsg);
             });
         });
-    </script>
+
+        // --- 4. LOGIC UPLOAD AVATAR ---
+        $('.btn-camera').click(function(e) {
+            e.preventDefault();
+            $('#avatarInput').click();
+        });
+
+        $('#avatarInput').change(function() {
+            let file = this.files[0];
+            if (!file) return;
+
+            let formData = new FormData();
+            formData.append('avatar', file);
+
+            $('.avatar-img').css('opacity', '0.5');
+
+            // Axios otomatis mendeteksi FormData dan set Content-Type: multipart/form-data
+            axios.post(API_BASE_URL + '/profile/avatar', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            .then(function(response) {
+                // response.data berisi JSON body dari server
+                // Pastikan server mengembalikan { url: '...' }
+                $('.avatar-img').attr('src', response.data.url).css('opacity', '1');
+                showModal('Foto profil berhasil diperbarui!');
+            })
+            .catch(function(error) {
+                $('.avatar-img').css('opacity', '1');
+                showModal('Gagal mengupload gambar.');
+                console.error(error);
+            });
+        });
+
+        // --- 5. LOGIC TOGGLE SETTINGS ---
+        $('.form-check-input').change(function() {
+            let $this = $(this);
+            let settingType = $this.closest('.settings-item').find('h6').text();
+            let isChecked = $this.is(':checked');
+            let key = (settingType === 'Notifikasi') ? 'notifications_enabled' : 'public_profile';
+
+            axios.post(API_BASE_URL + '/settings/update', {
+                key: key,
+                value: isChecked
+            })
+            .catch(function(error) {
+                showModal('Gagal menyimpan pengaturan. Silakan coba lagi.');
+                // Revert switch jika gagal
+                $this.prop('checked', !isChecked);
+                console.error(error);
+            });
+        });
+
+        // --- 6. LOGIC LOGOUT ---
+        $('.btn-logout').click(function() {
+            showModal('Apakah Anda yakin ingin keluar dari akun ini?', true, function() {
+                axios.post(API_BASE_URL + '/logout')
+                    .then(function() {
+                        window.location.href = '/login';
+                    })
+                    .catch(function(error) {
+                        // Tetap redirect meski API error (fallback)
+                        console.error('Logout error, but redirecting anyway:', error);
+                        window.location.href = '/login';
+                    });
+            });
+        });
+    });
+</script>
 </body>
 </html>

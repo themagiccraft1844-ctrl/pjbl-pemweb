@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminNoteController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\TreeController;
+use App\Http\Controllers\AdminExportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,11 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+
+    // Export Routes
+    Route::get('/admin/export/excel', [AdminExportController::class, 'exportExcel'])->name('admin.export.excel');
+    Route::get('/admin/export/pdf', [AdminExportController::class, 'exportPdf'])->name('admin.export.pdf');
 
     // kelola catetan yang ini rutenya
     Route::get('/admin/notes', [AdminNoteController::class, 'index'])->name('admin.notes.index');

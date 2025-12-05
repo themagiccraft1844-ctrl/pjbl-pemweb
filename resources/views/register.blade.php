@@ -241,7 +241,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!--    
+   
     <script>
         $(document).ready(function() {
             // Show/Hide Password
@@ -257,25 +257,25 @@
                 }
             });
 
-            // Register Logic
-            $('#registerForm').submit(function(e) {
-                e.preventDefault();
-                let btn = $('#btnRegister');
-                let originalText = btn.html();
+            // // Register Logic
+            // $('#registerForm').submit(function(e) {
+            //     e.preventDefault();
+            //     let btn = $('#btnRegister');
+            //     let originalText = btn.html();
                 
-                // Animasi Loading
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+            //     // Animasi Loading
+            //     btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
                 
-                // Simulasi API call
-                setTimeout(() => {
-                    let name = $('#fullname').val();
-                    alert(`Selamat datang, ${name}! Akun Anda berhasil dibuat.`);
-                    btn.prop('disabled', false).html(originalText);
-                    // Reset form
-                    $('#registerForm')[0].reset();
-                }, 1500);
-            });
+            //     // Simulasi API call
+            //     setTimeout(() => {
+            //         let name = $('#fullname').val();
+            //         alert(`Selamat datang, ${name}! Akun Anda berhasil dibuat.`);
+            //         btn.prop('disabled', false).html(originalText);
+            //         // Reset form
+            //         $('#registerForm')[0].reset();
+            //     }, 1500);
+            // });
         });
-    </script> -->
+    </script>
 </body>
 </html>
