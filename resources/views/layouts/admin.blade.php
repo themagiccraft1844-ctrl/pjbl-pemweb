@@ -118,8 +118,8 @@
                         </li>
 
                         <li class="nav-item mb-2">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-cog"></i> Pengaturan
+                            <a class="nav-link" href="{{ route('maintenance')}}">
+                                <i class="fas fa-cog"></i> Pengaturan (jangan dipencet)
                             </a>
                         </li>
 

@@ -210,7 +210,7 @@
             <div id="settings" class="tab-content fade-in @if($activeTab != 'settings') d-none @endif">
                 <ul class="settings-list">
                     <li class="settings-item">
-                        <div class="settings-info">
+                        <!-- <div class="settings-info">
                             <div class="settings-icon"><i class="far fa-bell"></i></div>
                             <div class="settings-text">
                                 <h6>Notifikasi</h6>
@@ -219,7 +219,7 @@
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" checked disabled title="Fitur ini akan segera hadir">
-                        </div>
+                        </div> -->
                     </li>
                     
                     <li class="settings-item clickable" onclick="openPasswordTab()">

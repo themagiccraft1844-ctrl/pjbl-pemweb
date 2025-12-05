@@ -53,6 +53,7 @@ Route::controller(DashboardController::class)->group(function () {
 Route::view('/profil', 'profil');
 Route::view('/detail', 'detail');
 Route::view('/friendlist', 'friendlist');
+Route::view('/maintenance', 'maintenance')->name('maintenance');
 
 // --- 5. Skin Routes (Pohon, Mading, Mailbox) ---
 Route::controller(SkinController::class)->group(function () {
