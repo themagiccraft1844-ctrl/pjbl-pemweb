@@ -23,6 +23,8 @@ use App\Http\Controllers\UserController;
 // --- 1. Halaman Guest (Hanya bisa diakses jika BELUM login) ---
 Route::middleware('guest')->group(function () {
     // Login & Register
+    Route::view('/', 'index')->name('index');
+    Route::view('/about', 'about')->name('about');
     Route::view('/login', 'login')->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
