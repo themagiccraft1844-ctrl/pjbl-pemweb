@@ -13,7 +13,7 @@ use App\Http\Controllers\AdminNoteController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\TreeController;
 use App\Http\Controllers\AdminExportController;
-
+use App\Http\Controllers\UserController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -64,6 +64,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/friendlist', [FriendController::class, 'index'])->name('friendlist');
     Route::post('/friend/add/{id}', [FriendController::class, 'addFriend'])->name('friend.add');
     Route::delete('/friend/remove/{id}', [FriendController::class, 'removeFriend'])->name('friend.remove');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [UserController::class, 'index'])->name('profile.index');
+    Route::put('/profile/update', [UserController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [UserController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/avatar', [UserController::class, 'updateAvatar'])->name('profile.avatar');
+    // Route settings jika diperlukan, atau digabung ke update profile
 });
 
 
