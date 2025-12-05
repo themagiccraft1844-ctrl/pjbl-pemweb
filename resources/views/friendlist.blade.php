@@ -120,7 +120,6 @@
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-gift me-2 text-primary"></i> Lihat Harapan</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form action="{{ route('friend.remove', $friend->id) }}" method="POST" onsubmit="return confirm('Hapus pertemanan dengan {{ $friend->name }}?');">

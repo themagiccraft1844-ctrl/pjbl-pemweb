@@ -95,13 +95,6 @@
                                 <i class="fas fa-users"></i> Kelola Pengguna
                             </a>
                         </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-cog"></i> Pengaturan
-                            </a>
-                        </li>
-
                     </ul>
                 </div>
             </nav>

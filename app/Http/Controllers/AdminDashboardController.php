@@ -26,7 +26,7 @@ class AdminDashboardController extends Controller
                         ->distinct('user_id')
                         ->count();
         // Atau jika hanya ingin total user terdaftar:
-        // $activeUsers = User::count();
+        $activeUsers = User::count();
 
         // Hitung catatan dengan privasi 'Private'
         $catatanPrivate = WishNote::where('privasi', 'Private')->count();
