@@ -329,18 +329,6 @@
 
 </head>
 <body>
-
-    <!-- Custom Modal for Alerts/Confirmations (to replace alert() and confirm()) -->
-    <div id="customModal" class="modal-overlay modal-hidden">
-        <div class="custom-modal">
-            <h5 id="modalTitle" class="fw-bold text-purple mb-3">Notifikasi</h5>
-            <p id="modalMessage" class="text-muted mb-4">Pesan Anda di sini.</p>
-            <button id="modalConfirmBtn" class="btn btn-save d-none" style="width: 48%; float: right;">Ya</button>
-            <button id="modalCloseBtn" class="btn btn-secondary" style="width: 48%; float: left; border-radius: 50px; background: #eee; color: #555; border: none;">Tutup</button>
-        </div>
-    </div>
-
-
     <div class="profile-card">
         
         <!-- Back to Dashboard Button -->
@@ -360,7 +348,7 @@
             </div>
             <h2 class="user-name">{{ auth()->user()->name ?? 'Guest' }}</h2>
             <p class="user-email">{{ auth()->user()->email ?? 'Guest' }}</p>
-            <span class="badge-member"><i class="fas fa-star me-1"></i> Wishnotes Member</span>
+            <span class="badge-member"><i class="fas fa-star me-1"></i> Wishnotes {{ auth()->user()->role ?? 'Member'}}</span>
         </div>
 
         <!-- Navigation Tabs (Only visible when not changing password) -->
@@ -400,7 +388,6 @@
             <!-- Tab: Settings -->
             <div id="settings" class="tab-content fade-in d-none">
                 <ul class="settings-list">
-                    
                     <!-- Change Password (Clickable) -->
                     <li class="settings-item clickable" id="btnToChangePassword">
                         <div class="settings-info">
@@ -476,32 +463,6 @@
 <script>
     id = {{ auth()->user()->id }}
     $(document).ready(function() {
-
-
-        // --- Custom Modal Functions (Replace alert and confirm) ---
-        function showModal(message, isConfirmation = false, onConfirm = null) {
-            $('#modalMessage').text(message);
-            $('#modalConfirmBtn').off('click').addClass('d-none');
-            $('#modalCloseBtn').text('Tutup').off('click');
-            
-            if (isConfirmation) {
-                $('#modalTitle').text('Konfirmasi');
-                $('#modalConfirmBtn').removeClass('d-none').click(function() {
-                    $('#customModal').addClass('modal-hidden');
-                    if (onConfirm) onConfirm();
-                });
-                $('#modalCloseBtn').click(function() {
-                    $('#customModal').addClass('modal-hidden');
-                }).text('Batal');
-            } else {
-                $('#modalTitle').text('Notifikasi');
-                $('#modalCloseBtn').click(function() {
-                    $('#customModal').addClass('modal-hidden');
-                });
-            }
-            $('#customModal').removeClass('modal-hidden');
-        }
-
 
         // --- KONFIGURASI AXIOS ---
         // Asumsi base URL API adalah /api
@@ -668,25 +629,6 @@
             .catch(function(error) {
                 $('.avatar-img').css('opacity', '1');
                 showModal('Gagal mengupload gambar.');
-                console.error(error);
-            });
-        });
-
-        // --- 5. LOGIC TOGGLE SETTINGS ---
-        $('.form-check-input').change(function() {
-            let $this = $(this);
-            let settingType = $this.closest('.settings-item').find('h6').text();
-            let isChecked = $this.is(':checked');
-            let key = (settingType === 'Notifikasi') ? 'notifications_enabled' : 'public_profile';
-
-            axios.post(API_BASE_URL + '/settings/update', {
-                key: key,
-                value: isChecked
-            })
-            .catch(function(error) {
-                showModal('Gagal menyimpan pengaturan. Silakan coba lagi.');
-                // Revert switch jika gagal
-                $this.prop('checked', !isChecked);
                 console.error(error);
             });
         });

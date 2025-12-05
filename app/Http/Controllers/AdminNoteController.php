@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\WishNote;
-use App\Models\TreeMessage;
+use App\Models\Message; // GANTI TreeMessage MENJADI Message
 use App\Models\User;
 use App\Models\UserAlert;
 use App\Models\BannedEmail;
@@ -37,7 +37,7 @@ class AdminNoteController extends Controller
     public function destroy($id)
     {
         $note = WishNote::findOrFail($id);
-        $note->delete();
+        $note->delete(); // Otomatis cascade delete pesan di dalamnya
 
         return back()->with('success', 'Catatan berhasil dihapus oleh Admin.');
     }
@@ -46,20 +46,24 @@ class AdminNoteController extends Controller
     // BAGIAN 2: MODERASI PESAN (Detail & Warn)
     // ==========================================
 
-    // Menampilkan Detail Pesan dalam Tabel (Bukan tampilan pohon/mading)
+    // Menampilkan Detail Pesan dalam Tabel
     public function show(Request $request, $id)
     {
         $note = WishNote::with('user')->findOrFail($id);
 
-        // Ambil pesan di dalam note ini
-        $messages = $note->messages()->with('sender'); 
+        // PERBAIKAN: Gunakan relasi 'messages' dari model WishNote
+        // Eager load 'user' (atau 'sender' tergantung model Message Anda)
+        // Di migrasi baru, message punya relasi ke User (user_id)
+        $messages = $note->messages()->with('user'); 
 
         // Fitur Cari Pesan Kasar
         if ($request->has('search')) {
+            // PERBAIKAN: Kolom isi pesan di tabel messages biasanya 'body' atau 'message'
+            // Sesuaikan dengan migrasi Message Anda. Di diskusi kita sebelumnya pakai 'message' di Controller Tree.
             $messages->where('message', 'like', '%' . $request->search . '%');
         }
 
-        $messages = $messages->paginate(20); 
+        $messages = $messages->latest()->paginate(20); 
 
         return view('admin.notes.show', compact('note', 'messages'));
     }
@@ -67,7 +71,8 @@ class AdminNoteController extends Controller
     // Hapus Pesan Spesifik (Sensor)
     public function deleteMessage($id)
     {
-        $msg = TreeMessage::findOrFail($id);
+        // PERBAIKAN: Gunakan Model Message
+        $msg = Message::findOrFail($id);
         $msg->delete();
         return back()->with('success', 'Pesan berhasil dihapus (disensor).');
     }
@@ -76,7 +81,7 @@ class AdminNoteController extends Controller
     public function warnUser(Request $request)
     {
         $user = User::findOrFail($request->user_id);
-        $level = $request->level; // 1 (Ringan), 2 (Menengah), 3 (Berat)
+        $level = $request->level; 
 
         // Simpan Riwayat Alert
         UserAlert::create([
@@ -104,14 +109,12 @@ class AdminNoteController extends Controller
         } elseif ($level == 3) {
             // BERAT: Hapus Akun & Banned Email
             
-            // 1. Masukkan email ke blacklist
             BannedEmail::create([
                 'email' => $user->email,
                 'reason' => $request->pesan_admin,
                 'admin_name' => auth()->user()->name
             ]);
 
-            // 2. Hapus User
             $user->delete();
 
             return back()->with('success', 'User BERHASIL DIBANNED PERMANEN dan akun dihapus.');
