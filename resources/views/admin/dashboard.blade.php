@@ -60,6 +60,31 @@
         </div>
     </div>
 
+    {{-- CHART 1 --}}
+   <h4 class="fw-bold mb-3 mt-5">Statistik Catatan</h4>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div style="position: relative; width:100%; height:300px;">
+                <canvas id="noteChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+
+    {{-- CHART 2 --}}
+    <h4 class="fw-bold mb-3 mt-5">Postingan 30 Hari Terakhir</h4>
+    <div class="card shadow-sm mb-4">
+       <div class="card-body">
+    <div style="position: relative; width:100%; height:300px;">
+        <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <div class="text-end mb-5 d-flex justify-content-end gap-2">
+        <a href="{{ route('admin.export.excel') }}" class="btn btn-success btn-sm">Download Excel</a>
+        <a href="{{ route('admin.export.pdf') }}" class="btn btn-danger btn-sm">Download PDF</a>
+    </div>
+
     <h4 class="fw-bold mb-3 text-secondary">Aktivitas Terbaru</h4>
     <div class="row">
         @forelse($recentActivities as $note)
@@ -115,5 +140,53 @@
         </div>
         @endforelse
     </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById('noteChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Total Catatan', 'User Aktif', 'Catatan Private'],
+        datasets: [{
+            data: [
+                {{ $totalCatatan }},
+                {{ $activeUsers }},
+                {{ $catatanPrivate }},
+            ],
+            backgroundColor: ['#4facfe', '#8A2BE2', '#ff9a9e'],
+            borderRadius: 8
+        }]
+    },
+    options: { plugins: { legend: { display: false } } }
+});
+
+// Dummy data untuk chart 30 hari terakhir (karena cuma front)
+const randomData = Array.from({ length: 30 }, () => Math.floor(Math.random() * 10) + 1);
+const dateLabels = Array.from({ length: 30 }, (_, i) => `Day ${i+1}`);
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
+    data: {
+        labels: dateLabels,
+        datasets: [{
+            label: 'Postingan / Hari',
+            data: randomData,
+            borderColor: '#4facfe',
+            backgroundColor: 'rgba(79, 172, 254, .4)',
+            tension: 0.3,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#007bff'
+        }]
+    },
+    options: {
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
 @endsection
 

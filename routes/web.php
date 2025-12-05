@@ -104,3 +104,6 @@ Route::post('/pohon/delete', [TreeController::class, 'destroy'])->name('pohon.de
 
 // Like pohon
 Route::post('/pohon/like', [TreeController::class, 'toggleLike'])->name('pohon.like');
+
+Route::get('/admin/export/excel', [AdminDashboardController::class, 'exportExcel'])->name('admin.export.excel');
+Route::get('/admin/export/pdf', [AdminDashboardController::class, 'exportPdf'])->name('admin.export.pdf');

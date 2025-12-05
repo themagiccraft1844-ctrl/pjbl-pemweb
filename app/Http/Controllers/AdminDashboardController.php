@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Exports\CatatanExport;
 use App\Models\User;
 use App\Models\WishNote;
+use PDF;
+use Excel;
+
 use Illuminate\Support\Facades\DB; // Diperlukan jika menghitung sesi aktif
 
 class AdminDashboardController extends Controller
@@ -43,5 +47,20 @@ class AdminDashboardController extends Controller
             'recentActivities'
             
         ));
+    }
+     public function exportExcel()
+    {
+        return Excel::download(new CatatanExport, 'wishnotes.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $notes = WishNote::orderBy('created_at','desc')->get();
+
+        $pdf = PDF::loadView('admin.exports.pdf', [
+            'notes' => $notes
+        ]);
+
+        return $pdf->download('wishnotes.pdf');
     }
 }
