@@ -54,7 +54,7 @@
             <div class="stat-card bg-gradient-purple shadow-sm">
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div>
-                        <h5 class="mb-1 opacity-75">User Aktif</h5>
+                        <h5 class="mb-1 opacity-75">Total User</h5>
                         <h2 class="fw-bold mb-0">{{ number_format($activeUsers) }}</h2>
                     </div>
                     <i class="fas fa-users bg-icon"></i>
@@ -189,7 +189,7 @@
     new Chart(ctxNote, {
         type: 'bar',
         data: {
-            labels: ['Total', 'Aktif', 'Private', 'Public'],
+            labels: ['Total Catatan', 'User', 'Private', 'Public'],
             datasets: [{
                 label: 'Jumlah',
                 data: [

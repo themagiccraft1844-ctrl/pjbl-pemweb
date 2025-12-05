@@ -117,7 +117,7 @@
             Silakan kembali lagi nanti!
         </p>
 
-        <a href="{{ route('dashboard') }}" class="btn-home">
+        <a href="{{ route('admin.dashboard') }}" class="btn-home">
             <i class="fas fa-arrow-left me-2"></i> Kembali ke Dashboard
         </a>
     </div>
