@@ -400,34 +400,7 @@
             <!-- Tab: Settings -->
             <div id="settings" class="tab-content fade-in d-none">
                 <ul class="settings-list">
-                    <!-- Notifications -->
-                    <li class="settings-item">
-                        <div class="settings-info">
-                            <div class="settings-icon"><i class="far fa-bell"></i></div>
-                            <div class="settings-text">
-                                <h6>Notifikasi</h6>
-                                <p>Terima update harapan baru</p>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" checked>
-                        </div>
-                    </li>
                     
-                    <!-- Privacy -->
-                    <li class="settings-item">
-                        <div class="settings-info">
-                            <div class="settings-icon"><i class="fas fa-lock-open"></i></div>
-                            <div class="settings-text">
-                                <h6>Profil Publik</h6>
-                                <p>Orang lain bisa melihat profilmu</p>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" checked>
-                        </div>
-                    </li>
-
                     <!-- Change Password (Clickable) -->
                     <li class="settings-item clickable" id="btnToChangePassword">
                         <div class="settings-info">

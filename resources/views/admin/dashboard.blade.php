@@ -63,8 +63,23 @@
     <h4 class="fw-bold mb-3 text-secondary">Aktivitas Terbaru</h4>
     <div class="row">
         @forelse($recentActivities as $note)
+        {{-- Logic untuk menentukan URL berdasarkan Skin --}}
+       @php
+        $wadah = strtolower($note->tipe_wadah ?? '');
+
+        if ($wadah === 'mading') {
+            $urlPrefix = 'mading';
+        } elseif ($wadah === 'mailbox') {
+            $urlPrefix = 'mailbox';
+        } else {
+            // fallback default
+            $urlPrefix = 'pohon';
+        }
+    @endphp
+
+
         <div class="col-md-6 col-lg-4">
-            <div class="card activity-card shadow-sm h-100 {{ strtolower($note->privasi) == 'private' ? 'private' : 'public' }}">
+        <div class="card activity-card shadow-sm h-100 {{ strtolower($note->privasi) == 'private' ? 'private' : 'public' }}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="badge {{ strtolower($note->privasi) == 'private' ? 'bg-danger' : 'bg-primary' }} bg-opacity-10 text-{{ strtolower($note->privasi) == 'private' ? 'danger' : 'primary' }}">
@@ -80,10 +95,14 @@
                         <small class="text-muted fw-bold">{{ $note->user->name ?? 'Anonim' }}</small>
                         
                         <div class="ms-auto">
+                            {{-- LOGIC BARU: Admin bisa lihat Private & Link sesuai Skin --}}
                             @if(strtolower($note->privasi) == 'private')
-                                <button class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;">Moderasi</button>
+                                {{-- Tombol merah untuk private, tapi tetap bisa diklik --}}
+                                <a href="{{ url('/' . $urlPrefix . '/' . $note->id) }}" class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;">
+                                    <i class="fas fa-user-secret me-1"></i> Intip (Admin)
+                                </a>
                             @else
-                                <a href="{{ url('/pohon/' . $note->id) }}" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">Lihat</a>
+                                <a href="{{ url('/' . $urlPrefix . '/' . $note->id) }}" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">Lihat</a>
                             @endif
                         </div>
                     </div>
@@ -97,3 +116,4 @@
         @endforelse
     </div>
 @endsection
+

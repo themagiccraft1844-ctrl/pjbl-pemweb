@@ -35,13 +35,13 @@ class AdminDashboardController extends Controller
             ->latest() // Sama dengan orderBy('created_at', 'desc')
             ->take(5)
             ->get();
-
         // Kirim semua data ke view
         return view('admin.dashboard', compact(
             'totalCatatan', 
             'activeUsers', 
             'catatanPrivate', 
             'recentActivities'
+            
         ));
     }
 }
