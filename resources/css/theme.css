@@ -1,0 +1,41 @@
+/* resources/css/theme.css
+   Definisi Variabel CSS untuk Tema Dinamis
+*/
+
+:root {
+    /* --- LIGHT MODE DEFAULTS --- */
+    --bg-app: #f3f4f6;
+    --bg-panel: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+
+    /* --- DEFAULT ACCENT (BLUE) --- */
+    --accent-start: #3b82f6;
+    --accent-end: #06b6d4;
+    --navbar-toggler-filter: none; /* Icon hamburger normal */
+}
+
+/* --- DARK MODE OVERRIDES --- */
+[data-theme="dark"] {
+    --bg-app: #111827;
+    --bg-panel: #1f2937;
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --navbar-toggler-filter: invert(1); /* Icon hamburger jadi putih */
+}
+
+/* --- ACCENT COLOR VARIANTS --- */
+[data-accent="blue"]   { --accent-start: #3b82f6; --accent-end: #0ea5e9; }
+[data-accent="yellow"] { --accent-start: #f59e0b; --accent-end: #fbbf24; }
+[data-accent="purple"] { --accent-start: #8b5cf6; --accent-end: #d946ef; }
+[data-accent="green"]  { --accent-start: #10b981; --accent-end: #84cc16; }
+[data-accent="red"]    { --accent-start: #ef4444; --accent-end: #f97316; }
+
+/* --- UTILITY CLASS TEXT COLOR --- */
+.text-accent {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}

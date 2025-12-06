@@ -78,4 +78,27 @@ class UserController extends Controller
 
         return back()->with('success', 'Foto profil berhasil diganti!');
     }
+    public function updateTheme(Request $request)
+    {
+        $request->validate([
+            'mode' => 'required|in:light,dark,system',
+            'color' => 'required|in:blue,yellow,purple,green,red', // Pilihan warna yang kita tentukan
+        ]);
+
+        $user = Auth::user();
+        
+        // Gabungkan menjadi format string tunggal: "mode-color"
+        // Contoh: "dark-yellow", "system-blue"
+        $themeString = $request->mode . '-' . $request->color;
+
+        /** @var \App\Models\User $user */
+        $user->theme_setting = $themeString;
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tema berhasil disimpan',
+            'theme' => $themeString
+        ]);
+    }
 }

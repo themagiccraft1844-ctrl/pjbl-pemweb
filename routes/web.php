@@ -57,7 +57,7 @@ Route::view('/maintenance', 'maintenance')->name('maintenance');
 
 // --- 5. Skin Routes (Pohon, Mading, Mailbox) ---
 Route::controller(SkinController::class)->group(function () {
-    Route::get('/pohon/{id}', 'showTree');
+    Route::get('/tree/{id}', 'showTree');
     Route::get('/mading/{id}', 'showMading');
     Route::get('/mailbox/{id}', 'showMailbox');
 });
@@ -110,6 +110,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     
     // WARN USER
     Route::post('/admin/users/warn', [AdminNoteController::class, 'warnUser'])->name('admin.users.warn');
+
+    //apdet tema
+    Route::post('/user/update-theme', [UserController::class, 'updateTheme'])->name('user.update-theme');
 });
 
 

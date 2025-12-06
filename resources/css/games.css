@@ -10,15 +10,25 @@
 
 .ornament {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 6%; /* Menggunakan persen agar responsif mengikuti besar pohon */
+    height: auto; /* Tinggi menyesuaikan agar gambar tidak gepeng */
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 20;
     transform-origin: center center;
     transform: translate(-50%, -50%);
 }
-.ornament:hover { transform: translate(-50%, -50%) scale(1.5); z-index: 100; }
+
+/* Tambahkan ini untuk memastikan gambar di dalam div mengikuti lebar div */
+.ornament img {
+    width: 100%;
+    display: block; 
+}
+
+.ornament:hover { 
+    transform: translate(-50%, -50%) scale(1.5); 
+    z-index: 100; 
+}
 
 .snowflake {
     position: absolute; top: -10px; color: white; border-radius: 50%; background-color: white;

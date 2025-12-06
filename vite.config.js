@@ -11,7 +11,9 @@ export default defineConfig({
                 'resources/css/dashboard.css', 
                 'resources/css/admin.css', 
                 'resources/css/games.css', 
-                'resources/js/app.js'
+                'resources/js/app.js',
+                'resources/css/theme.css',
+                'resources/js/theme-switcher.js'
             ],
             refresh: true,
         }),
