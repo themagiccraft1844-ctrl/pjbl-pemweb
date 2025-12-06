@@ -15,11 +15,11 @@ class AdminExportController extends Controller
      */
     public function exportExcel()
     {
-        $fileName = 'wishnotes_data_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $fileName = 'wishnotes_data_' . date('Y-m-d_H-i-s') . '.csv';
         $notes = WishNote::with('user')->latest()->get();
 
         $headers = [
-            "Content-type"        => "text/xlsx",
+            "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",

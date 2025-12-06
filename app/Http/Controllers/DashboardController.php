@@ -4,82 +4,77 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\WishNote;
-use App\Models\Friendship; // Pastikan Model Friendship di-import
+use App\Models\Friendship; 
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. JELAJAHI (Semua Public)
-        $exploreWishnotes = WishNote::where('privasi', 'public')
+        // 1. POPULER (Semua Public - Urut Like)
+        $popularWishnotes = WishNote::where('privasi', 'public')
             ->with('user')
-            ->withCount('messages') // Pastikan relasi 'messages' di Model WishNote menggunakan foreign key 'wishnote_id'
-            ->orderBy('created_at', 'desc')
+            ->withCount('messages')
+            ->orderBy('like_count', 'desc')
+            ->take(9)
             ->get();
 
-        // 2. Variable Default
-        $wishnotes = collect();        // Milik Saya
-        $friendsWishnotes = collect(); // Milik Teman (Accepted)
+        // 2. TERBARU / TELUSURI (Semua Public - Urut Waktu)
+        $recentWishnotes = WishNote::where('privasi', 'public')
+            ->with('user')
+            ->withCount('messages')
+            ->latest()
+            ->take(12)
+            ->get();
 
-        if (auth()->check()) {
-            $userId = auth()->id();
+        // Data Khusus User Login
+        $myWishnotes = collect();
+        $friendsWishnotes = collect();
 
-            // A. Ambil Wishnote Milik Sendiri
-            $wishnotes = WishNote::where('users_id', $userId) // Pastikan kolom di DB adalah 'users_id' atau 'user_id'
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            // 3. MILIK SAYA
+            $myWishnotes = WishNote::where('users_id', $userId)
                 ->with('user')
                 ->withCount('messages')
-                ->orderBy('created_at', 'desc')
+                ->latest()
                 ->get();
 
-            // B. Ambil Wishnote Milik Teman (Status Accepted)
-            // Cari hubungan dimana user jadi sender ATAU receiver, dan statusnya accepted
+            // 4. MILIK TEMAN (Jika ada model Friendship)
+            // Logika sederhana: Ambil wishnote dari user yang ada di tabel friendship dengan status 'accepted'
             $friendships = Friendship::where(function($q) use ($userId) {
                     $q->where('sender_id', $userId)
                       ->orWhere('receiver_id', $userId);
                 })
-                ->where('status', 'accepted') // Validasi status accepted
+                ->where('status', 'accepted')
                 ->get();
 
-            // Kumpulkan ID teman
             $friendIds = $friendships->map(function ($f) use ($userId) {
                 return $f->sender_id == $userId ? $f->receiver_id : $f->sender_id;
             });
 
-            // Ambil Wishnote berdasarkan ID teman
-            // Opsional: Tambahkan where('privasi', 'public') jika teman cuma boleh lihat yang public
-            $friendsWishnotes = WishNote::whereIn('users_id', $friendIds)
-                ->with('user')
-                ->withCount('messages')
-                ->orderBy('created_at', 'desc')
-                ->get();
+            if ($friendIds->isNotEmpty()) {
+                $friendsWishnotes = WishNote::whereIn('users_id', $friendIds)
+                    // Teman bisa lihat Public & Private (asumsi teman dekat boleh lihat private)
+                    // Atau sesuaikan jika teman hanya boleh lihat public
+                    ->with('user')
+                    ->withCount('messages')
+                    ->latest()
+                    ->get();
+            }
         }
-        
-        $myTrees = $wishnotes->where('tipe_wadah', 'pohon');
-        $myMadings = $wishnotes->where('tipe_wadah', 'mading');
-        $myMailboxes = $wishnotes->where('tipe_wadah', 'mailbox');
-        $user = Auth::user();
 
-        // Mengirim semua variabel yang mungkin dibutuhkan oleh view
         return view('dashboard', compact(
-            'wishnotes', 
-            'exploreWishnotes', 
-            'friendsWishnotes',
-            'myTrees',
-            'myMadings',
-            'myMailboxes',
-            'user'
+            'popularWishnotes', 
+            'recentWishnotes', 
+            'myWishnotes', 
+            'friendsWishnotes'
         ));
     }
 
     public function show(Request $request)
     {
-        $wishnotesId = WishNote::find($request->id);
-        // Tetap kirim variabel lain agar view tidak error
-        $wishnotes = collect();
-        $exploreWishnotes = collect();
-        $friendsWishnotes = collect();
-        
-        return view('dashboard', compact('wishnotesId', 'wishnotes', 'exploreWishnotes', 'friendsWishnotes'));
+        return redirect()->route('dashboard');
     }
 }

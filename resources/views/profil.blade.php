@@ -61,6 +61,11 @@
             justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;
         }
         .btn-camera:hover { transform: scale(1.1); color: #8a6dc5; }
+        /* Style khusus tombol kamera disabled */
+        .btn-camera.disabled {
+            background: #e9ecef; color: #adb5bd; cursor: not-allowed; box-shadow: none;
+        }
+        .btn-camera.disabled:hover { transform: none; }
 
         .user-name { font-weight: 700; margin-bottom: 2px; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .user-email { font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500; }
@@ -81,12 +86,19 @@
         .form-label { font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 5px; }
         .form-control { border-radius: 15px; border: 2px solid #f0f0f0; padding: 10px 15px; font-size: 0.95rem; transition: all 0.3s; }
         .form-control:focus { border-color: #a18cd1; box-shadow: 0 0 0 4px rgba(161, 140, 209, 0.1); background-color: #fff; }
+        
+        /* Disabled Input Style */
+        .form-control:disabled { background-color: #f8f9fa; color: #6c757d; cursor: not-allowed; }
 
         .settings-list { list-style: none; padding: 0; }
         .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
         .settings-item:last-child { border-bottom: none; }
         .settings-item.clickable { cursor: pointer; transition: background 0.2s; padding-left: 5px; padding-right: 5px; border-radius: 10px; }
         .settings-item.clickable:hover { background-color: #fcfaff; }
+        /* Disabled Setting Item */
+        .settings-item.disabled { opacity: 0.6; cursor: not-allowed; }
+        .settings-item.disabled:hover { background-color: transparent; }
+
         .settings-info { display: flex; align-items: center; gap: 15px; }
         .settings-icon { width: 40px; height: 40px; background: #f8f5ff; color: #a18cd1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
         .settings-text h6 { margin: 0; font-weight: 700; color: #555; font-size: 0.95rem; }
@@ -98,6 +110,8 @@
             box-shadow: 0 5px 15px rgba(161, 140, 209, 0.3); transition: transform 0.2s;
         }
         .btn-save:hover { transform: translateY(-2px); color: white; }
+        /* Disabled Save Button */
+        .btn-save:disabled { background: #adb5bd; cursor: not-allowed; transform: none; box-shadow: none; }
         
         .btn-logout {
             color: #ff6b6b; background: #fff5f5; border: none; border-radius: 50px; padding: 10px; width: 100%;
@@ -126,24 +140,41 @@
         <div class="profile-header">
             <div class="avatar-container">
                 @php
-                    $avatar = auth()->user()->avatar 
-                        ? asset('storage/'.auth()->user()->avatar) 
-                        : "https://ui-avatars.com/api/?name=".urlencode(auth()->user()->name)."&background=fff&color=a18cd1&size=128";
+                    $user = auth()->user();
+                    $isGuest = !$user; // Cek apakah guest
+                    
+                    if ($user && $user->avatar) {
+                        $avatarUrl = asset('storage/' . $user->avatar);
+                    } else {
+                        $nameForAvatar = $user ? $user->name : 'Tamu';
+                        $avatarUrl = "https://ui-avatars.com/api/?name=" . urlencode($nameForAvatar) . "&background=fff&color=a18cd1&size=128";
+                    }
                 @endphp
-                <img src="{{ $avatar }}" alt="Profile" class="avatar-img">
+                <img src="{{ $avatarUrl }}" alt="Profile" class="avatar-img">
                 
-                <form action="{{ route('profile.avatar') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
-                    @csrf
-                    <input type="file" name="avatar" id="avatarInput" accept="image/*" class="d-none" onchange="document.getElementById('avatarForm').submit()">
-                </form>
-
-                <button class="btn-camera" title="Ganti Foto" onclick="document.getElementById('avatarInput').click()">
-                    <i class="fas fa-camera"></i>
-                </button>
+                @auth
+                    <!-- Fitur Ganti Foto (Hanya User Login) -->
+                    <form action="{{ route('profile.avatar') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
+                        @csrf
+                        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="d-none" onchange="document.getElementById('avatarForm').submit()">
+                    </form>
+                    <button class="btn-camera" title="Ganti Foto" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                @else
+                    <!-- Fitur Ganti Foto (Guest - Disabled) -->
+                    <button class="btn-camera disabled" title="Login untuk ganti foto" onclick="alert('Silakan login terlebih dahulu untuk mengganti foto profil!')">
+                        <i class="fas fa-lock"></i>
+                    </button>
+                @endauth
             </div>
-            <h2 class="user-name">{{ auth()->user()->name }}</h2>
-            <p class="user-email">{{ auth()->user()->email }}</p>
-            <span class="badge-member"><i class="fas fa-star me-1"></i> Wishnotes {{ auth()->user()->role ?? 'Member'}}</span>
+            
+            <h2 class="user-name">{{ $user->name ?? 'Tamu (Guest)' }}</h2>
+            <p class="user-email">{{ $user->email ?? 'Belum login' }}</p>
+            <span class="badge-member">
+                <i class="fas {{ $isGuest ? 'fa-user-secret' : 'fa-star' }} me-1"></i> 
+                {{ $isGuest ? 'Mode Tamu' : 'Wishnotes ' . ($user->role ?? 'Member') }}
+            </span>
         </div>
 
         <div class="px-4 mt-3">
@@ -167,7 +198,7 @@
         </div>
 
         @php
-            $activeTab = 'edit-profile'; // default
+            $activeTab = 'edit-profile'; 
             if($errors->hasBag('password_update')) {
                 $activeTab = 'change-password';
             }
@@ -180,37 +211,57 @@
 
         <div class="content-area">
             
+            <!-- EDIT PROFILE TAB -->
             <div id="edit-profile" class="tab-content fade-in @if($activeTab != 'edit-profile') d-none @endif">
-                <form action="{{ route('profile.update') }}" method="POST">
+                
+                @if($isGuest)
+                    <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning text-center">
+                        <small><i class="fas fa-lock me-1"></i> Fitur edit profil dikunci untuk tamu.</small>
+                    </div>
+                @endif
+
+                <form action="{{ $isGuest ? '#' : route('profile.update') }}" method="POST" onsubmit="{{ $isGuest ? 'return false;' : '' }}">
                     @csrf
                     @method('PUT')
                     
                     <div class="mb-3">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" name="name" value="{{ old('name', auth()->user()->name) }}" required>
+                        <input type="text" class="form-control" name="name" 
+                               value="{{ old('name', $user->name ?? 'Tamu') }}" 
+                               {{ $isGuest ? 'disabled' : 'required' }}>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-0 text-muted" style="border-radius: 15px 0 0 15px;">@</span>
-                            <input type="email" class="form-control" name="email" value="{{ old('email', auth()->user()->email) }}" style="border-radius: 0 15px 15px 0;" required>
+                            <input type="email" class="form-control" name="email" 
+                                   value="{{ old('email', $user->email ?? 'guest@wishnotes.com') }}" 
+                                   style="border-radius: 0 15px 15px 0;" 
+                                   {{ $isGuest ? 'disabled' : 'required' }}>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Bio Singkat</label>
-                        <textarea class="form-control" name="bio" rows="2">{{ old('bio', auth()->user()->bio ?? 'Suka berbagi harapan dan mimpi-mimpi kecil ✨') }}</textarea>
+                        <textarea class="form-control" name="bio" rows="2" {{ $isGuest ? 'disabled' : '' }}>{{ old('bio', $user->bio ?? 'Saya sedang berkunjung sebagai tamu 👀') }}</textarea>
                     </div>
                     
-                    <button type="submit" class="btn btn-save">
-                        Simpan Perubahan
-                    </button>
+                    @if($isGuest)
+                        <button type="button" class="btn btn-save" disabled>
+                            Simpan Perubahan (Login Dulu)
+                        </button>
+                    @else
+                        <button type="submit" class="btn btn-save">
+                            Simpan Perubahan
+                        </button>
+                    @endif
                 </form>
             </div>
 
+            <!-- SETTINGS TAB -->
             <div id="settings" class="tab-content fade-in @if($activeTab != 'settings') d-none @endif">
                 <ul class="settings-list">
                     <li class="settings-item">
-                        <!-- <div class="settings-info">
+                        <div class="settings-info">
                             <div class="settings-icon"><i class="far fa-bell"></i></div>
                             <div class="settings-text">
                                 <h6>Notifikasi</h6>
@@ -219,31 +270,53 @@
                         </div>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" checked disabled title="Fitur ini akan segera hadir">
-                        </div> -->
+                        </div>
                     </li>
                     
-                    <li class="settings-item clickable" onclick="openPasswordTab()">
-                        <div class="settings-info">
-                            <div class="settings-icon"><i class="fas fa-key"></i></div>
-                            <div class="settings-text">
-                                <h6>Ganti Password</h6>
-                                <p>Amankan akunmu secara berkala</p>
+                    @if($isGuest)
+                        <!-- Ganti Password Disabled untuk Guest -->
+                        <li class="settings-item disabled" onclick="alert('Tamu tidak memiliki password untuk diganti. Silakan daftar akun!')">
+                            <div class="settings-info">
+                                <div class="settings-icon bg-light text-muted"><i class="fas fa-lock"></i></div>
+                                <div class="settings-text">
+                                    <h6 class="text-muted">Ganti Password</h6>
+                                    <p>Hanya untuk member terdaftar</p>
+                                </div>
                             </div>
-                        </div>
-                        <i class="fas fa-chevron-right text-muted small"></i>
-                    </li>
+                            <i class="fas fa-ban text-muted small"></i>
+                        </li>
+                    @else
+                        <!-- Ganti Password Enabled -->
+                        <li class="settings-item clickable" onclick="openPasswordTab()">
+                            <div class="settings-info">
+                                <div class="settings-icon"><i class="fas fa-key"></i></div>
+                                <div class="settings-text">
+                                    <h6>Ganti Password</h6>
+                                    <p>Amankan akunmu secara berkala</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted small"></i>
+                        </li>
+                    @endif
                 </ul>
 
                 <div class="mt-4 pt-3 border-top">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-logout" onclick="return confirm('Yakin ingin keluar?')">
-                            <i class="fas fa-sign-out-alt me-2"></i> Keluar dari Akun
-                        </button>
-                    </form>
+                    @auth
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-logout" onclick="return confirm('Yakin ingin keluar?')">
+                                <i class="fas fa-sign-out-alt me-2"></i> Keluar dari Akun
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-save text-center text-decoration-none d-block">
+                            <i class="fas fa-sign-in-alt me-2"></i> Login / Daftar Sekarang
+                        </a>
+                    @endauth
                 </div>
             </div>
 
+            <!-- CHANGE PASSWORD TAB -->
             <div id="change-password" class="tab-content fade-in @if($activeTab != 'change-password') d-none @endif">
                 <div class="text-center mb-4">
                     <h5 class="fw-bold" style="color: #666;">Ganti Password</h5>
@@ -305,18 +378,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Simple Tab Switcher (Tanpa Reload)
+        // Simple Tab Switcher
         function switchTab(targetId) {
-            // Sembunyikan semua konten
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
-            // Remove active class dari nav
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            
-            // Tampilkan target
             document.getElementById(targetId).classList.remove('d-none');
             
-            // Set active nav
-            // Cari tombol yang punya onclick="switchTab('targetId')" (sedikit hacky tapi works)
             const btns = document.querySelectorAll('.nav-btn');
             btns.forEach(btn => {
                 if(btn.getAttribute('onclick').includes(targetId)) {
@@ -324,7 +391,6 @@
                 }
             });
 
-            // Pastikan Nav Bar muncul jika bukan change password
             if(targetId !== 'change-password') {
                 document.getElementById('mainNav').classList.remove('d-none');
             }
@@ -340,9 +406,8 @@
             document.getElementById('change-password').classList.add('d-none');
             document.getElementById('settings').classList.remove('d-none');
             document.getElementById('mainNav').classList.remove('d-none');
-            // Highlight settings tab
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn')[1].classList.add('active'); // asumsi index 1 adalah settings
+            document.querySelectorAll('.nav-btn')[1].classList.add('active'); 
         }
 
         function togglePass(inputId, iconEl) {
