@@ -1,63 +1,99 @@
-
-body { font-family: 'Nunito', sans-serif; background-color: #f8f9fa; }
-.navbar { background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.navbar-brand { font-weight: 700; color: #a18cd1 !important; font-size: 1.5rem; }
-.nav-profile-img { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid #fbc2eb; }
-
-/* Hero Section */
+/* --- DASHBOARD SPECIFIC --- */
 .hero-section {
     background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
-    color: white; border-radius: 20px; margin-bottom: 30px; 
-    position: relative; overflow: hidden; transition: all 0.3s ease;
-}
-.hero-section::after {
-    content: '\f004'; font-family: "Font Awesome 6 Free"; font-weight: 900;
-    position: absolute; right: -20px; bottom: -30px; font-size: 150px; opacity: 0.1; transform: rotate(-20deg);
+    color: white;
+    border-radius: 20px;
+    margin-bottom: 30px; 
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 20px rgba(161, 140, 209, 0.2);
 }
 
-.fade-in { animation: fadeIn 0.5s; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+[data-bs-theme="dark"] .hero-section {
+    background: linear-gradient(135deg, #4a148c 0%, #880e4f 100%);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.hero-section::after {
+    content: '\f004';
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    right: -20px;
+    bottom: -30px;
+    font-size: 150px;
+    opacity: 0.1;
+    transform: rotate(-20deg);
+}
 
 /* Card Styling */
 .wish-card {
-    border: none; border-radius: 20px; transition: all 0.3s; background: white; 
-    overflow: hidden; height: 100%; position: relative; cursor: pointer; 
+    border: none;
+    border-radius: 20px;
+    transition: all 0.3s;
+    background: var(--card-bg);
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+    cursor: pointer; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    color: var(--text-color);
 }
-.wish-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+.wish-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
 
 /* Skin Indicators */
 .skin-badge {
-    position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%; 
-    display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; z-index: 2;
+    position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 12px; 
+    display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; z-index: 2;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-.skin-tree { background-color: #61c0bf; }
-.skin-mading { background-color: #ffb6b9; }
-.skin-mailbox { background-color: #fce38a; color: #555; }
+.skin-tree { background: linear-gradient(45deg, #61c0bf, #2193b0); }
+.skin-mading { background: linear-gradient(45deg, #ff9a9e, #fecfef); }
+.skin-mailbox { background: linear-gradient(45deg, #fce38a, #f38181); }
 
 .card-body { padding: 25px; }
-.card-title { font-weight: 700; color: #444; }
-.card-text { color: #888; font-size: 0.9rem; min-height: 40px; }
+.card-title { font-weight: 700; font-size: 1.1rem; }
+.card-text { font-size: 0.9rem; min-height: 40px; opacity: 0.8; }
 
-.status-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-top: 10px; }
-.status-public { background-color: #e3f2fd; color: #2196f3; }
-.status-private { background-color: #fbe9e7; color: #ff5722; }
-
-.btn-create { background: #fff; color: #a18cd1; font-weight: 700; border-radius: 50px; border: none; padding: 10px 25px; }
+/* Buttons */
+.btn-create {
+    background: #fff;
+    color: #a18cd1;
+    font-weight: 800;
+    border-radius: 50px;
+    border: none;
+    padding: 12px 30px;
+    text-decoration: none;
+    transition: 0.2s;
+}
+.btn-create:hover { background: #f0f0f0; transform: scale(1.05); }
 
 /* Tabs */
-.nav-pills .nav-link { cursor: pointer; transition: all 0.3s; user-select: none; }
-.nav-pills .nav-link.active { background-color: #a18cd1; color: white !important; }
-.nav-pills .nav-link:not(.active) { color: #6c757d; background-color: transparent; }
+.nav-pills .nav-link {
+    cursor: pointer;
+    transition: all 0.3s;
+    user-select: none;
+    font-weight: 600;
+    color: #6c757d;
+}
+[data-bs-theme="dark"] .nav-pills .nav-link { color: #adb5bd; }
 
-/* Styling khusus untuk card teman */
-.friend-card .wish-card {
-    border: 2px dashed #61c0bf;
-    background-color: #e0f7fa;
+.nav-pills .nav-link.active {
+    background-color: #a18cd1;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(161, 140, 209, 0.4);
 }
-.friend-card .skin-badge {
-    background-color: #4db6ac;
+[data-bs-theme="dark"] .nav-pills .nav-link.active { background-color: #7e57c2; }
+
+/* Mobile Bottom Nav */
+.bottom-nav {
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
 }
-.friend-card .wish-card:hover {
-    transform: translateY(-5px) scale(1.03);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
-}
+.nav-item-mobile { color: #adb5bd; }
+.nav-item-mobile.active { color: #a18cd1; }

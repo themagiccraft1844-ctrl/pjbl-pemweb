@@ -1,0 +1,194 @@
+/* --- GLOBAL DEFAULTS --- */
+:root {
+    --primary-gradient: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    --primary-color: #a18cd1;
+    --text-color: #444;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+    --border-color: #eee;
+    --input-bg: #fff;
+}
+
+[data-bs-theme="dark"] {
+    --primary-gradient: linear-gradient(135deg, #4a148c 0%, #880e4f 100%);
+    --primary-color: #d1c4e9;
+    --text-color: #e0e0e0;
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --navbar-bg: rgba(30, 30, 30, 0.95);
+    --border-color: #333;
+    --input-bg: #2c2c2c;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    background-color: var(--navbar-bg) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    z-index: 1050;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color) !important;
+    font-size: 1.5rem;
+}
+
+/* Style Khusus Tombol Profil di Navbar */
+.navbar .nav-link.dropdown-toggle {
+    border: 2px solid var(--border-color); /* Border tegas */
+    background-color: var(--input-bg); /* Background beda dikit dari navbar */
+    padding: 5px 15px 5px 5px; /* Spacing enak dilihat */
+    border-radius: 50px !important; /* Pastikan bulat lonjong (pill) */
+    transition: all 0.3s ease;
+}
+
+.navbar .nav-link.dropdown-toggle:hover,
+.navbar .nav-link.dropdown-toggle.show {
+    border-color: var(--primary-color); /* Warna primary saat hover */
+    background-color: var(--card-bg);
+    box-shadow: 0 0 0 3px rgba(161, 140, 209, 0.15); /* Efek glow halus */
+    transform: translateY(-1px);
+}
+
+/* --- PROFILE PAGE --- */
+.profile-container {
+    max-width: 1000px;
+    margin: 40px auto;
+}
+
+.profile-card {
+    background-color: var(--card-bg);
+    border-radius: 25px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+    border: none;
+    overflow: hidden;
+    color: var(--text-color);
+}
+
+.profile-header-bg {
+    background: var(--primary-gradient);
+    height: 150px;
+    position: relative;
+}
+
+.profile-avatar-wrapper {
+    margin-top: -75px;
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 5px solid var(--card-bg);
+    object-fit: cover;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background-color: var(--card-bg);
+}
+
+.btn-camera {
+    position: absolute; bottom: 10px; right: 10px; 
+    background: var(--card-bg); color: var(--primary-color); border: none;
+    width: 40px; height: 40px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;
+}
+.btn-camera:hover { transform: scale(1.1); color: #8a6dc5; }
+
+/* Settings List */
+.settings-list { list-style: none; padding: 0; }
+.settings-item { 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 15px 0; border-bottom: 1px solid var(--border-color); 
+    color: var(--text-color);
+}
+.settings-item:last-child { border-bottom: none; }
+.settings-item.clickable { cursor: pointer; transition: background 0.2s; padding: 15px 10px; border-radius: 10px; }
+.settings-item.clickable:hover { background-color: rgba(0,0,0,0.03); }
+
+.settings-icon { 
+    width: 40px; height: 40px; 
+    background: rgba(161, 140, 209, 0.1); color: var(--primary-color); 
+    border-radius: 12px; display: flex; align-items: center; justify-content: center; 
+    font-size: 1.1rem; margin-right: 15px;
+}
+
+/* Forms */
+.form-control {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    border-radius: 15px;
+    padding: 12px 15px;
+}
+.form-control:focus {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(161, 140, 209, 0.1);
+}
+.form-control:disabled {
+    background-color: rgba(0,0,0,0.05);
+    color: var(--text-color);
+    opacity: 0.6;
+}
+
+/* --- FRIENDLIST PAGE --- */
+.friend-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: 15px;
+    transition: 0.2s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    color: var(--text-color);
+}
+.friend-card:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05); 
+}
+
+.search-box .form-control {
+    border-radius: 50px 0 0 50px;
+    border-right: none;
+}
+.search-box .btn {
+    border-radius: 0 50px 50px 0;
+    border-left: none;
+    border-color: var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+.search-box .btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.list-group-item {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* --- UTILS --- */
+.text-primary-custom { color: var(--primary-color) !important; }
+.bg-gradient-custom { background: var(--primary-gradient); }
+.btn-primary-custom {
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    font-weight: 600;
+}
+.btn-primary-custom:hover {
+    filter: brightness(110%);
+    color: white;
+}
